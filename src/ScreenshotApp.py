@@ -40,8 +40,6 @@ class ScreenshotApp(QWidget):
         # Open a windoe with the background being the screenshot
         self.transparent_window = TransparentWindow()
         self.transparent_window.show()
-        print('Take screenshot')
-
 
     def on_close_screenshot(self):
         print('Close screenshot')

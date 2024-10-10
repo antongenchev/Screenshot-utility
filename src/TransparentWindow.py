@@ -1,6 +1,7 @@
 import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow, QWidget
+from src.DraggableBox import DraggableBox
 
 class TransparentWindow(QMainWindow):
     def __init__(self):
@@ -19,3 +20,6 @@ class TransparentWindow(QMainWindow):
         self.screenshot_widget =  QWidget(self)
         self.screenshot_widget.setStyleSheet(f"background-image: url('{os.getenv('SCREENSHOT_BACKGROUND')}'); background-repeat: no-repeat;")
         self.setCentralWidget(self.screenshot_widget)
+
+        # Create a widget which selects the are of the screenshot to save
+        self.draggabe_widget = DraggableBox(self)
