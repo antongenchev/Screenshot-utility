@@ -42,4 +42,11 @@ class ScreenshotApp(QWidget):
         self.transparent_window.show()
 
     def on_close_screenshot(self):
-        print('Close screenshot')
+        if self.transparent_window:
+            self.transparent_window.close()
+            self.transparent_window = None
+
+    def closeEvent(self, event):
+        if self.transparent_window:
+            self.transparent_window.close()
+        event.accept()
