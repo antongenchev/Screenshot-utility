@@ -83,10 +83,10 @@ class ScreenshotApp(QWidget):
     def on_save(self):
         try:
             with mss() as sct:
-                screenshot = sct.grab({'left':self.transparent_window.draggable_widget.selection.left + 1,
-                                       'top':self.transparent_window.draggable_widget.selection.top + 1,
-                                       'width':self.transparent_window.draggable_widget.selection.width - 2,
-                                       'height':self.transparent_window.draggable_widget.selection.height - 2})
+                screenshot = sct.grab({'left':self.transparent_window.draggable_widget.selection.left,
+                                       'top':self.transparent_window.draggable_widget.selection.top,
+                                       'width':self.transparent_window.draggable_widget.selection.width,
+                                       'height':self.transparent_window.draggable_widget.selection.height})
                 screenshot = Image.frombytes('RGB', screenshot.size, screenshot.rgb)
                 screenshot.save(config['paths']['screenshot_selection'])
         except Exception as e:
