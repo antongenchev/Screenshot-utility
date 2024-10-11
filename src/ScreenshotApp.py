@@ -38,6 +38,14 @@ class ScreenshotApp(QWidget):
         self.label_size = QLabel('Size(w,h)')
         self.field_width = QSpinBox(self)
         self.field_height = QSpinBox(self)
+        self.field_left.setRange(0, int(os.getenv('MONITOR_WIDTH')))
+        self.field_top.setRange(0, int(os.getenv('MONITOR_HEIGHT')))
+        self.field_width.setRange(0, int(os.getenv('MONITOR_WIDTH')))
+        self.field_height.setRange(0, int(os.getenv('MONITOR_HEIGHT')))
+        self.field_left.valueChanged.connect(self.on_change_selection)
+        self.field_top.valueChanged.connect(self.on_change_selection)
+        self.field_width.valueChanged.connect(self.on_change_selection)
+        self.field_height.valueChanged.connect(self.on_change_selection)
         grid_layout.addWidget(self.label_position, 0, 0)
         grid_layout.addWidget(self.field_left, 0, 1)
         grid_layout.addWidget(self.field_top, 0, 2)
@@ -64,14 +72,16 @@ class ScreenshotApp(QWidget):
         # Open a windoe with the background being the screenshot
         self.transparent_window = TransparentWindow()
         self.transparent_window.show()
+        # Connect the signal from the DraggableBox for screenshot selection
+        self.transparent_window.draggable_widget.signal_selection_change.connect(self.update_screenshot_selection)
 
     def on_save(self):
         try:
             with mss() as sct:
-                screenshot = sct.grab({'left':self.transparent_window.draggabe_widget.selection.left + 1,
-                                       'top':self.transparent_window.draggabe_widget.selection.top + 1,
-                                       'width':self.transparent_window.draggabe_widget.selection.width - 2,
-                                       'height':self.transparent_window.draggabe_widget.selection.height - 2})
+                screenshot = sct.grab({'left':self.transparent_window.draggable_widget.selection.left + 1,
+                                       'top':self.transparent_window.draggable_widget.selection.top + 1,
+                                       'width':self.transparent_window.draggable_widget.selection.width - 2,
+                                       'height':self.transparent_window.draggable_widget.selection.height - 2})
                 screenshot = Image.frombytes('RGB', screenshot.size, screenshot.rgb)
                 screenshot.save(os.getenv('SCREENSHOT_SELECTION'))
         except Exception as e:
@@ -81,6 +91,40 @@ class ScreenshotApp(QWidget):
         if self.transparent_window:
             self.transparent_window.close()
             self.transparent_window = None
+
+    def on_change_selection(self):
+        '''
+        Pass changes to the screenshot selection from the ScreenshotApp to the DraggableBox
+        '''
+        try:
+            selection = Box(int(self.field_left.text()),
+                            int(self.field_top.text()),
+                            int(self.field_width.text()),
+                            int(self.field_height.text()))
+            self.transparent_window.draggable_widget.on_change_selection(selection)
+        except Exception as e:
+            print(str(e))
+
+    def update_screenshot_selection(self):
+        '''
+        Handle the selection being changed from outside ScreenshotApp
+        '''
+        # Block signals to prevent triggering on_change_selection when programmatically updating values
+        self.field_left.blockSignals(True)
+        self.field_top.blockSignals(True)
+        self.field_width.blockSignals(True)
+        self.field_height.blockSignals(True)
+        # Update the Position and Size fields
+        selection = self.transparent_window.draggable_widget.selection
+        self.field_left.setValue(selection.left)
+        self.field_top.setValue(selection.top)
+        self.field_width.setValue(selection.width)
+        self.field_height.setValue(selection.height)
+        # Unblock signals after the programmatic update
+        self.field_left.blockSignals(False)
+        self.field_top.blockSignals(False)
+        self.field_width.blockSignals(False)
+        self.field_height.blockSignals(False)
 
     def closeEvent(self, event):
         if self.transparent_window:

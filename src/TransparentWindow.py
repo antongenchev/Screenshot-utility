@@ -8,6 +8,8 @@ class TransparentWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.initUI()
+        # Create a widget which selects the are of the screenshot to save
+        self.draggable_widget = DraggableBox(self)
 
     def initUI(self):
         '''
@@ -22,5 +24,3 @@ class TransparentWindow(QMainWindow):
         self.screenshot_widget.setStyleSheet(f"background-image: url('{os.getenv('SCREENSHOT_BACKGROUND')}'); background-repeat: no-repeat;")
         self.setCentralWidget(self.screenshot_widget)
 
-        # Create a widget which selects the are of the screenshot to save
-        self.draggabe_widget = DraggableBox(self)
