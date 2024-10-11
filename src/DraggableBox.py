@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QFrame
 from PyQt5.QtCore import Qt
 import os
 from src.utils import Box
+from src.config import *
 
 class DraggableBox(QFrame):
 
@@ -13,8 +14,8 @@ class DraggableBox(QFrame):
         super().__init__(parent)
         self.draggin = False
         self.offset = None
-        self.selection = Box(int(os.getenv('MONITOR_WIDTH')) // 2 - 50,
-                             int(os.getenv('MONITOR_HEIGHT')) // 2 - 50,
+        self.selection = Box(int(config['monitor']['width']) // 2 - 50,
+                             int(config['monitor']['height']) // 2 - 50,
                              100,
                              100)
         self.initGUI()

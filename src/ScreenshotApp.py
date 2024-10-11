@@ -1,9 +1,11 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLineEdit, QSpinBox, QLabel
+from PyQt5.QtCore import pyqtSlot
 from src.TransparentWindow import TransparentWindow
 from mss import mss
 from PIL import Image
 import os
 from src.utils import Box
+from src.config import *
 
 class ScreenshotApp(QWidget):
     def __init__(self):
@@ -16,7 +18,10 @@ class ScreenshotApp(QWidget):
         '''
         self.layout = QVBoxLayout()
         self.setWindowTitle('Screenshot Taker')
-        self.setGeometry(2920, 300, 400, 400) # Where to start the app: position (2930, 300) on the screen
+        self.setGeometry(config['start_position']['left'],
+                         config['start_position']['top'],
+                         config['start_position']['width'],
+                         config['start_position']['height'])
 
         self.transparent_window = None # Transparent window object
 
@@ -38,10 +43,10 @@ class ScreenshotApp(QWidget):
         self.label_size = QLabel('Size(w,h)')
         self.field_width = QSpinBox(self)
         self.field_height = QSpinBox(self)
-        self.field_left.setRange(0, int(os.getenv('MONITOR_WIDTH')))
-        self.field_top.setRange(0, int(os.getenv('MONITOR_HEIGHT')))
-        self.field_width.setRange(0, int(os.getenv('MONITOR_WIDTH')))
-        self.field_height.setRange(0, int(os.getenv('MONITOR_HEIGHT')))
+        self.field_left.setRange(0, config['monitor']['width'])
+        self.field_top.setRange(0, config['monitor']['height'])
+        self.field_width.setRange(0, config['monitor']['width'])
+        self.field_height.setRange(0, config['monitor']['height'])
         self.field_left.valueChanged.connect(self.on_change_selection)
         self.field_top.valueChanged.connect(self.on_change_selection)
         self.field_width.valueChanged.connect(self.on_change_selection)
@@ -68,7 +73,7 @@ class ScreenshotApp(QWidget):
         with mss() as sct:
             screenshot = sct.grab({'left': 0, 'top': 0, 'width': 1920, 'height': 1080})
             screenshot = Image.frombytes("RGB", screenshot.size, screenshot.rgb)
-            screenshot.save(os.getenv('SCREENSHOT_BACKGROUND'))
+            screenshot.save(config['paths']['screenshot_background'])
         # Open a windoe with the background being the screenshot
         self.transparent_window = TransparentWindow()
         self.transparent_window.show()
@@ -83,7 +88,7 @@ class ScreenshotApp(QWidget):
                                        'width':self.transparent_window.draggable_widget.selection.width - 2,
                                        'height':self.transparent_window.draggable_widget.selection.height - 2})
                 screenshot = Image.frombytes('RGB', screenshot.size, screenshot.rgb)
-                screenshot.save(os.getenv('SCREENSHOT_SELECTION'))
+                screenshot.save(config['paths']['screenshot_selection'])
         except Exception as e:
             print(e)
 
@@ -105,6 +110,7 @@ class ScreenshotApp(QWidget):
         except Exception as e:
             print(str(e))
 
+    @pyqtSlot()
     def update_screenshot_selection(self):
         '''
         Handle the selection being changed from outside ScreenshotApp

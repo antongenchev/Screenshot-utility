@@ -1,0 +1,16 @@
+{
+    "monitor": {
+        "width": 1920,
+        "height": 1080
+    },
+    "start_position": {
+        "left": 2920,
+        "top": 300,
+        "width": 400,
+        "height": 400
+    },
+    "paths": {
+        "screenshot_background": "/home/default/Desktop/screenshot/Screenshot-utility/photos/screenshot/screenshot.png",
+        "screenshot_selection": "/home/default/Desktop/screenshot/Screenshot-utility/photos/screenshot/screenshot_selection.png"
+    }
+}
