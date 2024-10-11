@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLineEdit, QSpinBox, QLabel
 from src.TransparentWindow import TransparentWindow
 from mss import mss
 from PIL import Image
@@ -20,6 +20,7 @@ class ScreenshotApp(QWidget):
 
         self.transparent_window = None # Transparent window object
 
+        # Buttons for taking and closing screenshot
         h_layout = QHBoxLayout()
         self.button_screenshot = QPushButton('Take a new screenshot', self)
         self.button_screenshot.clicked.connect(self.on_take_screenshot)
@@ -28,6 +29,22 @@ class ScreenshotApp(QWidget):
         h_layout.addWidget(self.button_screenshot)
         h_layout.addWidget(self.button_close_screenshot)
         self.layout.addLayout(h_layout)
+
+        # Menu for changing the screenshot selection
+        grid_layout = QGridLayout()
+        self.label_position = QLabel('Position(x,y)')
+        self.field_left = QSpinBox(self)
+        self.field_top = QSpinBox(self)
+        self.label_size = QLabel('Size(w,h)')
+        self.field_width = QSpinBox(self)
+        self.field_height = QSpinBox(self)
+        grid_layout.addWidget(self.label_position, 0, 0)
+        grid_layout.addWidget(self.field_left, 0, 1)
+        grid_layout.addWidget(self.field_top, 0, 2)
+        grid_layout.addWidget(self.label_size, 1, 0)
+        grid_layout.addWidget(self.field_width, 1, 1)
+        grid_layout.addWidget(self.field_height, 1, 2)
+        self.layout.addLayout(grid_layout)
 
         h_layout2 = QHBoxLayout()
         self.button_save = QPushButton('Save', self)
