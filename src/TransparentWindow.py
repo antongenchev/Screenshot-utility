@@ -2,6 +2,7 @@ import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow, QWidget
 from src.DraggableBox import DraggableBox
+from src.utils import Box
 
 class TransparentWindow(QMainWindow):
     def __init__(self):
@@ -13,7 +14,7 @@ class TransparentWindow(QMainWindow):
         Initialise the gui of the screenshot.
         This is a transparent window whose background is a screenshot
         '''
-        self.setGeometry(0, 0, 1920, 1080)
+        self.setGeometry(0, 0, int(os.getenv('MONITOR_WIDTH')), int(os.getenv('MONITOR_HEIGHT')))
         self.setWindowFlags(Qt.FramelessWindowHint)
 
         # Create a widget which takes the whole space and has background=screenshot

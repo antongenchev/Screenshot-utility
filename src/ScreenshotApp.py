@@ -3,6 +3,7 @@ from src.TransparentWindow import TransparentWindow
 from mss import mss
 from PIL import Image
 import os
+from src.utils import Box
 
 class ScreenshotApp(QWidget):
     def __init__(self):
@@ -28,6 +29,12 @@ class ScreenshotApp(QWidget):
         h_layout.addWidget(self.button_close_screenshot)
         self.layout.addLayout(h_layout)
 
+        h_layout2 = QHBoxLayout()
+        self.button_save = QPushButton('Save', self)
+        self.button_save.clicked.connect(self.on_save)
+        h_layout2.addWidget(self.button_save)
+        self.layout.addLayout(h_layout2)
+
         self.setLayout(self.layout)
 
     def on_take_screenshot(self):
@@ -40,6 +47,18 @@ class ScreenshotApp(QWidget):
         # Open a windoe with the background being the screenshot
         self.transparent_window = TransparentWindow()
         self.transparent_window.show()
+
+    def on_save(self):
+        try:
+            with mss() as sct:
+                screenshot = sct.grab({'left':self.transparent_window.draggabe_widget.selection.left + 1,
+                                       'top':self.transparent_window.draggabe_widget.selection.top + 1,
+                                       'width':self.transparent_window.draggabe_widget.selection.width - 2,
+                                       'height':self.transparent_window.draggabe_widget.selection.height - 2})
+                screenshot = Image.frombytes('RGB', screenshot.size, screenshot.rgb)
+                screenshot.save(os.getenv('SCREENSHOT_SELECTION'))
+        except Exception as e:
+            print(e)
 
     def on_close_screenshot(self):
         if self.transparent_window:
