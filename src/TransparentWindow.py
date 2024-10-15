@@ -1,6 +1,6 @@
 import os
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QMainWindow, QWidget
+from PyQt5.QtCore import Qt, QObject, QEvent
+from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication
 from src.DraggableBox import DraggableBox
 from src.utils import Box
 from src.config import *
@@ -9,8 +9,10 @@ class TransparentWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.initUI()
+        self.is_ctrl = False # True if we are creating a new draggable widget
         # Create a widget which selects the are of the screenshot to save
         self.draggable_widget = DraggableBox(self)
+        self.draggable_widget.installEventFilter(self)
 
     def initUI(self):
         '''
@@ -25,3 +27,27 @@ class TransparentWindow(QMainWindow):
         self.screenshot_widget.setStyleSheet(f"background-image: url('{config['paths']['screenshot_background']}'); background-repeat: no-repeat;")
         self.setCentralWidget(self.screenshot_widget)
 
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            if QApplication.keyboardModifiers() == Qt.ControlModifier:
+                print("Mouse Pressed with Ctrl")
+
+    def mouseMoveEvent(self, event):
+        if QApplication.keyboardModifiers() == Qt.ControlModifier:
+            print("Dragging with Ctrl")
+            self.is_ctrl = True
+        else:
+            self.is_ctrl = False
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            print("Release with Ctrl")
+        self.is_ctrl = False
+
+    def eventFilter(self, obj, event):
+        if obj == self.draggable_widget:
+            if QApplication.keyboardModifiers() == Qt.ControlModifier:
+                if event.type() in [QEvent.MouseButtonPress, QEvent.MouseMove, QEvent.MouseButtonRelease]:
+                    self.mousePressEvent(event)
+                    return True
+        return super().eventFilter(obj, event)
