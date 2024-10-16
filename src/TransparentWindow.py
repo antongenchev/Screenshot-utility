@@ -9,10 +9,11 @@ class TransparentWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.initUI()
-        self.is_ctrl = False # True if we are creating a new draggable widget
-        # Create a widget which selects the are of the screenshot to save
+        self.is_drawing = False # True if we are creating a new draggable widget
+        # Create a widget which selects the area of the screenshot to save
         self.draggable_widget = DraggableBox(self)
         self.draggable_widget.installEventFilter(self)
+        # self.draggable_widget = None
 
     def initUI(self):
         '''
@@ -31,18 +32,25 @@ class TransparentWindow(QMainWindow):
         if event.button() == Qt.LeftButton:
             if QApplication.keyboardModifiers() == Qt.ControlModifier:
                 print("Mouse Pressed with Ctrl")
+                self.start_pos = event.pos() # The first corner of the box
+                self.is_drawing = True
+
+                # Destory the existing draggable widget if it exists
+                if self.draggable_widget:
+                    self.draggable_widget.deleteLater()
+                    self.draggable_widget = None
 
     def mouseMoveEvent(self, event):
-        if QApplication.keyboardModifiers() == Qt.ControlModifier:
-            print("Dragging with Ctrl")
-            self.is_ctrl = True
-        else:
-            self.is_ctrl = False
+        if self.is_drawing:
+            self.end_pos = event.pos() # Track the other corner of the box
 
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            print("Release with Ctrl")
-        self.is_ctrl = False
+        if event.button() == Qt.LeftButton and self.is_drawing:
+            self.end_pos = event.pos()
+            # Create the new draggable widget
+            if self.start_pos and self.end_pos:
+                self.create_draggable_widget()
+        self.is_drawing = False
 
     def eventFilter(self, obj, event):
         if obj == self.draggable_widget:
@@ -51,3 +59,17 @@ class TransparentWindow(QMainWindow):
                     self.mousePressEvent(event)
                     return True
         return super().eventFilter(obj, event)
+
+    def create_draggable_widget(self):
+        print(self.start_pos, self.end_pos)
+        left = min(self.start_pos.x(), self.end_pos.x())
+        top = min(self.start_pos.y(), self.end_pos.y())
+        width = abs(self.start_pos.x() - self.end_pos.x())
+        height = abs(self.start_pos.y() - self.end_pos.y())
+        if width == 0 or height == 0:
+            # Can not create a DraggableBox with size 
+            return None
+        selection = Box(left, top, width, height)
+        self.draggable_widget = DraggableBox(self, selection=selection)
+        self.draggable_widget.installEventFilter(self)
+        self.draggable_widget.show()

@@ -23,17 +23,20 @@ class DraggableBox(QFrame):
     # Sginal that sends changes to the screenshot selection
     signal_selection_change = pyqtSignal()
 
-    def __init__(self, parent=None, preset=None):
+    def __init__(self, parent=None, preset=None, selection=None):
         super().__init__(parent)
         self.draggin = False
         self.resizing = False
         self.offset = None
         self.border = config['draggable_box']['border']
         self.resize_border = config['draggable_box']['resize_border']
-        self.selection = Box(int(config['monitor']['width']) // 2 - 50,
+        if selection is None:
+            self.selection = Box(int(config['monitor']['width']) // 2 - 50,
                              int(config['monitor']['height']) // 2 - 50,
                              100,
                              100)
+        else:
+            self.selection = selection
         self.initGUI()
 
     def initGUI(self):
