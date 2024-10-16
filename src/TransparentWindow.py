@@ -1,7 +1,9 @@
 import os
-from PyQt5.QtCore import Qt, QObject, QEvent
+from PyQt5.QtCore import Qt, QObject, QEvent, QRect
+from PyQt5.QtGui import QPainter, QPen
 from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication
 from src.DraggableBox import DraggableBox
+from src.OverlayWidget import OverlayWidget
 from src.utils import Box
 from src.config import *
 
@@ -10,10 +12,15 @@ class TransparentWindow(QMainWindow):
         super().__init__()
         self.initUI()
         self.is_drawing = False # True if we are creating a new draggable widget
+        self.start_pos = None
+        self.end_pos = None
         # Create a widget which selects the area of the screenshot to save
         self.draggable_widget = DraggableBox(self)
         self.draggable_widget.installEventFilter(self)
         # self.draggable_widget = None
+        self.overlay = OverlayWidget(self)
+        self.overlay.setGeometry(self.rect())  # Set the geometry to match the main window
+        self.overlay.show()
 
     def initUI(self):
         '''
@@ -31,9 +38,10 @@ class TransparentWindow(QMainWindow):
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             if QApplication.keyboardModifiers() == Qt.ControlModifier:
-                print("Mouse Pressed with Ctrl")
                 self.start_pos = event.pos() # The first corner of the box
+                self.overlay.start_pos = event.pos()
                 self.is_drawing = True
+                self.overlay.is_drawing = True
 
                 # Destory the existing draggable widget if it exists
                 if self.draggable_widget:
@@ -43,14 +51,18 @@ class TransparentWindow(QMainWindow):
     def mouseMoveEvent(self, event):
         if self.is_drawing:
             self.end_pos = event.pos() # Track the other corner of the box
+            self.overlay.end_pos = self.end_pos
+            self.overlay.update()
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton and self.is_drawing:
             self.end_pos = event.pos()
+            self.overlay.end_pos = event.pos()
             # Create the new draggable widget
             if self.start_pos and self.end_pos:
                 self.create_draggable_widget()
         self.is_drawing = False
+        self.overlay.is_drawing = False
 
     def eventFilter(self, obj, event):
         if obj == self.draggable_widget:
