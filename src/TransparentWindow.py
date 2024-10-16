@@ -19,7 +19,7 @@ class TransparentWindow(QMainWindow):
         self.draggable_widget.installEventFilter(self)
         # self.draggable_widget = None
         self.overlay = OverlayWidget(self)
-        self.overlay.setGeometry(self.rect())  # Set the geometry to match the main window
+        self.overlay.setGeometry(self.rect()) # Set the geometry to match the main window
         self.overlay.show()
 
     def initUI(self):
