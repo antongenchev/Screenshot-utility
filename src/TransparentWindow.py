@@ -95,13 +95,13 @@ class TransparentWindow(QMainWindow):
                 if event.type() == QEvent.MouseButtonPress:
                     event_pos = self.mapFromGlobal(obj.mapToGlobal(event.pos()))
                     self.mousePressEvent(event, event_pos=event_pos)
+                    return True
                 elif event.type() == QEvent.MouseMove:
                     event_pos = self.mapFromGlobal(obj.mapToGlobal(event.pos()))
                     self.mouseMoveEvent(event, event_pos=event_pos)
                 elif event.type() == QEvent.MouseButtonRelease:
                     event_pos = self.mapFromGlobal(obj.mapToGlobal(event.pos()))
                     self.mouseReleaseEvent(event, event_pos=event_pos)
-                return True
         return super().eventFilter(obj, event)
 
     def create_draggable_widget(self):
