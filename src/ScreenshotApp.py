@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLineEdit, QSpinBox, QLabel
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtCore import pyqtSlot, Qt
+from PyQt5.QtGui import QPixmap
 from src.TransparentWindow import TransparentWindow
 from mss import mss
 from PIL import Image
@@ -34,6 +35,12 @@ class ScreenshotApp(QWidget):
         h_layout.addWidget(self.button_screenshot)
         h_layout.addWidget(self.button_close_screenshot)
         self.layout.addLayout(h_layout)
+
+        # Label to display the screenshot
+        self.screenshot_label = QLabel(self)
+        self.screenshot_label.setFixedSize(600, 400)  # Set some default size
+        self.screenshot_label.setStyleSheet("border: 1px solid black")
+        self.layout.addWidget(self.screenshot_label)
 
         # Menu for changing the screenshot selection
         grid_layout = QGridLayout()
@@ -89,6 +96,9 @@ class ScreenshotApp(QWidget):
                                        'height':self.transparent_window.draggable_widget.selection.height})
                 screenshot = Image.frombytes('RGB', screenshot.size, screenshot.rgb)
                 screenshot.save(config['paths']['screenshot_selection'])
+
+                # Display the saved screenshot in the QLabel
+                self.display_screenshot(config['paths']['screenshot_selection'])
         except Exception as e:
             print(e)
 
@@ -136,3 +146,12 @@ class ScreenshotApp(QWidget):
         if self.transparent_window:
             self.transparent_window.close()
         event.accept()
+
+    def display_screenshot(self, image_path):
+        '''
+        Load the screenshot from image_path and display it in the QLabel
+        '''
+        pixmap = QPixmap(image_path)
+        self.screenshot_label.setPixmap(pixmap.scaled(self.screenshot_label.size(), 
+                                                      Qt.KeepAspectRatio, 
+                                                      Qt.SmoothTransformation))
