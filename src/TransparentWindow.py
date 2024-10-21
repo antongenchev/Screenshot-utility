@@ -101,7 +101,6 @@ class TransparentWindow(QMainWindow):
     def eventFilter(self, obj, event):
         if obj == self.draggable_widget:
             if QApplication.keyboardModifiers() == Qt.ControlModifier or self.is_drawing:
-                print('Event Filter. Event type: ', event.type()==QEvent.MouseButtonRelease)
                 if event.type() == QEvent.MouseButtonPress:
                     event_pos = self.mapFromGlobal(obj.mapToGlobal(event.pos()))
                     self.mousePressEvent(event, event_pos=event_pos)

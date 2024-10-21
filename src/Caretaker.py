@@ -17,20 +17,19 @@ class Caretaker():
         '''
         if obj_id not in self._mementos:
             self._mementos[obj_id] = []
-            self._idx[obj_id] = 0
+            self._idx[obj_id] = -1
             self._max_mementos[obj_id] = config['mementos']['max_num_mementos']
         # Remove any mementos after the current index (in case of undone steps)
-        if len(self._mementos) > 0 and self._idx[obj_id] < len(self._mementos) - 1:
-            self._mementos[obj_id] = self._mementos[obj_id][:self._idx + 1]
+        if len(self._mementos[obj_id]) > 0 and self._idx[obj_id] < len(self._mementos[obj_id]) - 1:
+            self._mementos[obj_id] = self._mementos[obj_id][:self._idx[obj_id] + 1]
         # Append the new memento
         self._mementos[obj_id].append(memento)
         # Check if the number of mementos exceeds the maximum limit
         if len(self._mementos[obj_id]) > self._max_mementos[obj_id]:
             # Remove the oldest memento
             self._mementos[obj_id].pop(0)
-            self._idx[obj_id] -= 1
         # Updae the current index to point to the last memento
-        self._idx[obj_id] += 1
+        self._idx[obj_id] = len(self._mementos[obj_id]) - 1
 
     def undo(self, obj_id:str):
         '''
@@ -39,6 +38,8 @@ class Caretaker():
         Parameters:
             obj_id: the name/id of the object for which the mementos are stored
         '''
+        if obj_id not in self._mementos:
+            return None
         # Set the new current index if it is valid
         if self._idx[obj_id] - 1 < 0:
             return None
@@ -53,6 +54,8 @@ class Caretaker():
         Parameters:
             obj_id: the name/id of the object for which the mementos are stored
         '''
+        if obj_id not in self._mementos:
+            return None
         # Set the new current index if it is valid
         if self._idx[obj_id] + 1 >= len(self._mementos[obj_id]):
             return None
