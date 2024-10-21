@@ -152,9 +152,7 @@ class DraggableBox(QFrame):
 
     def resize_box(self, mouse_position):
         geometry = self.geometry()
-        print(geometry)
         mouse_position = self.mapToParent(mouse_position)
-        print(mouse_position)
         left, top = geometry.left(), geometry.top()
         right, bottom = geometry.left() + geometry.width(), geometry.top() + geometry.height()
         min_width, min_height = 1 + 2 * self.border, 1 + 2 * self.border # enforce min_width, min_height

@@ -1,9 +1,12 @@
 import os
+from typing import List
 from PyQt5.QtCore import Qt, QObject, QEvent, QRect
-from PyQt5.QtGui import QPainter, QPen
-from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication
+from PyQt5.QtGui import QPainter, QPen, QKeySequence
+from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication, QShortcut
 from src.DraggableBox import DraggableBox
 from src.OverlayWidget import OverlayWidget
+from src.Memento import Memento
+from src.Caretaker import caretaker
 from src.utils import Box
 from src.config import *
 
@@ -14,10 +17,11 @@ class TransparentWindow(QMainWindow):
         self.is_drawing = False # True if we are creating a new draggable widget
         self.start_pos = None
         self.end_pos = None
+
         # Create a widget which selects the area of the screenshot to save
         self.draggable_widget = DraggableBox(self)
         self.draggable_widget.installEventFilter(self)
-        # self.draggable_widget = None
+
         self.overlay = OverlayWidget(self)
         self.overlay.setGeometry(self.rect()) # Set the geometry to match the main window
         self.overlay.show()
@@ -34,6 +38,12 @@ class TransparentWindow(QMainWindow):
         self.screenshot_widget =  QWidget(self)
         self.screenshot_widget.setStyleSheet(f"background-image: url('{config['paths']['screenshot_background']}'); background-repeat: no-repeat;")
         self.setCentralWidget(self.screenshot_widget)
+
+        # Define the keyboard shortcuts
+        self.undo_shortcut = QShortcut(QKeySequence("Ctrl+Z"), self)
+        self.undo_shortcut.activated.connect(self.undo_action)
+        self.redo_shortcut = QShortcut(QKeySequence("Ctrl+Shift+Z"), self)
+        self.redo_shortcut.activated.connect(self.redo_action)
 
     def mousePressEvent(self, event, event_pos=None):
         '''
@@ -113,8 +123,15 @@ class TransparentWindow(QMainWindow):
         if width == 0 or height == 0:
             # Can not create a DraggableBox with size 
             return None
-
         selection = Box(left, top, width, height)
+        self.set_draggable_widget(selection)
+        # Save the state
+        self.save_memento()
+
+    def set_draggable_widget(self, selection:Box):
+        '''
+        Set draggable widget with a given screenshot selection
+        '''
         if self.draggable_widget:
             # Change the selection of the existing DraggableBox
             self.draggable_widget.on_change_selection(selection)
@@ -123,3 +140,32 @@ class TransparentWindow(QMainWindow):
             self.draggable_widget = DraggableBox(self, selection=selection)
             self.draggable_widget.installEventFilter(self)
             self.draggable_widget.show()
+
+    def undo_action(self):
+        '''
+        Perform undo action. Load the previous memento
+        '''
+        memento = caretaker.undo('TransparentWindow')
+        if memento:
+            self.load_memento(memento)
+
+    def redo_action(self):
+        '''
+        Perform redo action. Load the redo memento
+        '''
+        memento = caretaker.redo('TransparentWindow')
+        if memento:
+            self.load_memento(memento)
+
+    def save_memento(self) -> Memento:
+        '''
+        Return a memento with the state of the current Transparent Window
+        '''
+        memento = Memento(selection=self.draggable_widget.selection)
+        caretaker.save('TransparentWindow', memento)
+
+    def load_memento(self, m:Memento) -> None:
+        '''
+        Load a Memento
+        '''
+        self.set_draggable_widget(m.selection)
