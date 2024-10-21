@@ -23,10 +23,13 @@ class DraggableBox(QFrame):
     # Sginal that sends changes to the screenshot selection
     signal_selection_change = pyqtSignal()
 
-    def __init__(self, parent=None, preset=None, selection=None):
+    def __init__(self, parent=None, preset=None, selection=None, instance_TransparentWindow=None):
         super().__init__(parent)
-        self.draggin = False
-        self.resizing = False
+        self.save_memento = instance_TransparentWindow.save_memento # method used to save the memento for the TransparentWindow widget
+
+        self.prior_selection = None # the selection before dragging resizing
+        self.draggin = False # are we currently dragging the box
+        self.resizing = False # are we currently resizing the box
         self.offset = None
         self.border = config['draggable_box']['border']
         self.resize_border = config['draggable_box']['resize_border']
@@ -54,7 +57,7 @@ class DraggableBox(QFrame):
 
     def mousePressEvent(self, event):
         '''
-        On mouse down start dragging the box
+        On mouse down start dragging or resising the box
         '''
         if event.button() == Qt.LeftButton:
             mouse_position = event.pos()
@@ -67,6 +70,8 @@ class DraggableBox(QFrame):
                 # Resize the box
                 self.resizing = True
                 self.resize_zone = zone_clicked
+            # Record the selection before dragging/resizing the box
+            self.prior_selection = self.selection
 
     def mouseMoveEvent(self, event):
         '''
@@ -88,6 +93,10 @@ class DraggableBox(QFrame):
             self.offset = None
             self.resizing = False
             self.resize_zone = None
+            # If the selection has changed save memento
+            if self.selection != self.prior_selection:
+                self.save_memento()
+            
 
     def update_selection(self):
         '''

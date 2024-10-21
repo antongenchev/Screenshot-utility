@@ -19,7 +19,7 @@ class TransparentWindow(QMainWindow):
         self.end_pos = None
 
         # Create a widget which selects the area of the screenshot to save
-        self.draggable_widget = DraggableBox(self)
+        self.draggable_widget = DraggableBox(self, instance_TransparentWindow=self)
         self.draggable_widget.installEventFilter(self)
 
         self.overlay = OverlayWidget(self)
@@ -136,7 +136,7 @@ class TransparentWindow(QMainWindow):
             self.draggable_widget.on_change_selection(selection)
         else:
             # Create the new DraggableBox
-            self.draggable_widget = DraggableBox(self, selection=selection)
+            self.draggable_widget = DraggableBox(self, selection=selection, instance_TransparentWindow=self)
             self.draggable_widget.installEventFilter(self)
             self.draggable_widget.show()
 
