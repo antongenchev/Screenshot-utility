@@ -1,6 +1,6 @@
 import os
 from typing import List
-from PyQt5.QtCore import Qt, QObject, QEvent, QRect
+from PyQt5.QtCore import Qt, QObject, QEvent, QRect, pyqtSignal
 from PyQt5.QtGui import QPainter, QPen, QKeySequence
 from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication, QShortcut
 from src.DraggableBox import DraggableBox
@@ -11,6 +11,9 @@ from src.utils import Box
 from src.config import *
 
 class TransparentWindow(QMainWindow):
+
+    signal_selection_change = pyqtSignal()
+
     def __init__(self):
         super().__init__()
         self.initUI()
@@ -139,6 +142,7 @@ class TransparentWindow(QMainWindow):
             self.draggable_widget = DraggableBox(self, selection=selection, instance_TransparentWindow=self)
             self.draggable_widget.installEventFilter(self)
             self.draggable_widget.show()
+        self.signal_selection_change.emit()
 
     def undo_action(self):
         '''

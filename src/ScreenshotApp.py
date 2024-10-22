@@ -13,6 +13,7 @@ class ScreenshotApp(QWidget):
     def __init__(self):
         super().__init__()
         self.initGUI()
+        self.screenshot_image = None
 
     def initGUI(self):
         '''
@@ -80,8 +81,8 @@ class ScreenshotApp(QWidget):
         # Take a screenhot
         with mss() as sct:
             screenshot = sct.grab({'left': 0, 'top': 0, 'width': 1920, 'height': 1080})
-            screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR) # convert to opencv image
-            cv2.imwrite(config['paths']['screenshot_background'], screenshot)
+            self.screenshot_image = cv2.cvtColor(np.array(screenshot), cv2.COLOR_BGRA2BGR) # convert to opencv image
+            cv2.imwrite(config['paths']['screenshot_background'], self.screenshot_image)
         # Open a windoe with the background being the screenshot
         self.transparent_window = TransparentWindow()
         self.transparent_window.show()
@@ -158,3 +159,25 @@ class ScreenshotApp(QWidget):
         self.screenshot_label.setPixmap(pixmap.scaled(self.screenshot_label.size(), 
                                                       Qt.KeepAspectRatio, 
                                                       Qt.SmoothTransformation))
+
+    def update_screenshot_live(self):
+        '''
+        Capture the screenshot based on current selection and update the QLabel with the image
+        Update the screenshot that is showing in the QLabel element for the creenshot based on the selection 
+        '''
+        try:
+            selection = self.transparent_window.draggable_widget.selection
+            image = self.screenshot_image[selection.top : selection.top + selection.height,
+                                          selection.left : selection.left + selection.width]
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            # Ensure the image is contiguous
+            if not image.flags['C_CONTIGUOUS']:
+                image = np.ascontiguousarray(image)
+            height, width, channel = image.shape
+            image = QImage(image.data, width, height, width * channel, QImage.Format_RGB888)
+            pixmap = QPixmap.fromImage(image)
+            self.screenshot_label.setPixmap(pixmap.scaled(self.screenshot_label.size(),
+                                            Qt.KeepAspectRatio,
+                                            Qt.SmoothTransformation))
+        except:
+            return None
