@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QPus
 from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtGui import QPixmap, QImage
 from src.TransparentWindow import TransparentWindow
+from src.ZoomableLabel import ZoomableLabel
 from mss import mss
 import cv2
 import numpy as np
@@ -39,7 +40,7 @@ class ScreenshotApp(QWidget):
         self.layout.addLayout(h_layout)
 
         # Label to display the screenshot
-        self.screenshot_label = QLabel(self)
+        self.screenshot_label = ZoomableLabel(self)
         self.screenshot_label.setFixedSize(600, 400)  # Set some default size
         self.screenshot_label.setStyleSheet("border: 1px solid black")
         self.layout.addWidget(self.screenshot_label)
