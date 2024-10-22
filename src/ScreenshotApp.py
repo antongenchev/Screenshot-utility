@@ -87,7 +87,7 @@ class ScreenshotApp(QWidget):
         self.transparent_window = TransparentWindow()
         self.transparent_window.show()
         # Connect the signal from the DraggableBox for screenshot selection (tracks any movement)
-        self.transparent_window.draggable_widget.signal_selection_change.connect(self.update_screenshot_selection)
+        self.transparent_window.draggable_widget.signal_selection_change_light.connect(self.update_screenshot_selection)
         # Connect the signal from the TransparentWindow to get updates of the selection (not while dragging/resizing)
         self.transparent_window.signal_selection_change.connect(self.update_screenshot_live)
 

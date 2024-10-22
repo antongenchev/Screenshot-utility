@@ -24,6 +24,7 @@ class TransparentWindow(QMainWindow):
         # Create a widget which selects the area of the screenshot to save
         self.draggable_widget = DraggableBox(self, instance_TransparentWindow=self)
         self.draggable_widget.installEventFilter(self)
+        self.draggable_widget.signal_selection_change.connect(self.update_screenshot_selection)
 
         self.overlay = OverlayWidget(self)
         self.overlay.setGeometry(self.rect()) # Set the geometry to match the main window
@@ -141,7 +142,16 @@ class TransparentWindow(QMainWindow):
             # Create the new DraggableBox
             self.draggable_widget = DraggableBox(self, selection=selection, instance_TransparentWindow=self)
             self.draggable_widget.installEventFilter(self)
+            self.draggable_widget.signal_selection_change.connect(self.update_screenshot_selection)
             self.draggable_widget.show()
+        self.signal_selection_change.emit()
+
+    def update_screenshot_selection(self):
+        '''
+        Handle updates of the selection from within the DraggableBox
+        '''
+        # Pass signal to ScreenshotApp
+        self.save_memento()
         self.signal_selection_change.emit()
 
     def undo_action(self):
