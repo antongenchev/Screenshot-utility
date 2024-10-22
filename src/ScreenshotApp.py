@@ -1,9 +1,10 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLineEdit, QSpinBox, QLabel
 from PyQt5.QtCore import pyqtSlot, Qt
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QImage
 from src.TransparentWindow import TransparentWindow
 from mss import mss
-from PIL import Image
+import cv2
+import numpy as np
 import os
 from src.utils import Box
 from src.config import *
@@ -79,13 +80,15 @@ class ScreenshotApp(QWidget):
         # Take a screenhot
         with mss() as sct:
             screenshot = sct.grab({'left': 0, 'top': 0, 'width': 1920, 'height': 1080})
-            screenshot = Image.frombytes("RGB", screenshot.size, screenshot.rgb)
-            screenshot.save(config['paths']['screenshot_background'])
+            screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR) # convert to opencv image
+            cv2.imwrite(config['paths']['screenshot_background'], screenshot)
         # Open a windoe with the background being the screenshot
         self.transparent_window = TransparentWindow()
         self.transparent_window.show()
-        # Connect the signal from the DraggableBox for screenshot selection
+        # Connect the signal from the DraggableBox for screenshot selection (tracks any movement)
         self.transparent_window.draggable_widget.signal_selection_change.connect(self.update_screenshot_selection)
+        # Connect the signal from the TransparentWindow to get updates of the selection (not while dragging/resizing)
+        self.transparent_window.signal_selection_change.connect(self.update_screenshot_live)
 
     def on_save(self):
         try:
@@ -94,8 +97,8 @@ class ScreenshotApp(QWidget):
                                        'top':self.transparent_window.draggable_widget.selection.top,
                                        'width':self.transparent_window.draggable_widget.selection.width,
                                        'height':self.transparent_window.draggable_widget.selection.height})
-                screenshot = Image.frombytes('RGB', screenshot.size, screenshot.rgb)
-                screenshot.save(config['paths']['screenshot_selection'])
+                screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
+                cv2.imwrite(config['paths']['screenshot_background'], screenshot)
 
                 # Display the saved screenshot in the QLabel
                 self.display_screenshot(config['paths']['screenshot_selection'])
