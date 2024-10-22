@@ -1,18 +1,22 @@
 from PyQt5.QtWidgets import QLabel
-from PyQt5.QtGui import QPainter, QPixmap, QImage
+from PyQt5.QtGui import QPainter, QImage
 from PyQt5.QtCore import Qt, QPoint
+import numpy as np
 
 class ZoomableLabel(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.original_pixmap = QPixmap()
+        self.original_image = None
         self.scale_factor = 1.0
         self.offset = QPoint(0, 0)
         self.last_mouse_pos = None
 
-    def setPixmap(self, pixmap):
-        self.original_pixmap = pixmap
-        super().setPixmap(pixmap)
+    def setImage(self, image):
+        '''
+        Set the OpenCV image and convert it to QImage
+        '''
+        self.original_image = image
+        self.update()  # Update the label to repaint with the new image
 
     def wheelEvent(self, event):
         '''
@@ -44,7 +48,15 @@ class ZoomableLabel(QLabel):
             self.last_mouse_pos = None
 
     def paintEvent(self, event):
-        # Draw the scaled and translated pixmap
+        ''' Draw the scaled and translated image '''
+        if self.original_image is None:
+            return # No image to display
+        # Convert OpenCV image to QImage
+        height, width, channel = self.original_image.shape
+        bytes_per_line = channel * width
+        q_image = QImage(self.original_image.data, width, height, bytes_per_line, QImage.Format_RGB888)
+        # Draw the scaled and translated image
         painter = QPainter(self)
-        scaled_pixmap = self.original_pixmap.scaled(self.original_pixmap.size() * self.scale_factor, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        painter.drawPixmap(self.offset, scaled_pixmap)
+        scaled_image = q_image.scaled(width * self.scale_factor, height * self.scale_factor, Qt.IgnoreAspectRatio, Qt.FastTransformation)
+        painter.drawImage(self.offset, scaled_image)
+

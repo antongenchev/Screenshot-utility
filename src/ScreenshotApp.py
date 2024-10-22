@@ -101,9 +101,6 @@ class ScreenshotApp(QWidget):
                                        'height':self.transparent_window.draggable_widget.selection.height})
                 screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
                 cv2.imwrite(config['paths']['screenshot_background'], screenshot)
-
-                # Display the saved screenshot in the QLabel
-                self.display_screenshot(config['paths']['screenshot_selection'])
         except Exception as e:
             print(e)
 
@@ -152,15 +149,6 @@ class ScreenshotApp(QWidget):
             self.transparent_window.close()
         event.accept()
 
-    def display_screenshot(self, image_path):
-        '''
-        Load the screenshot from image_path and display it in the QLabel
-        '''
-        pixmap = QPixmap(image_path)
-        self.screenshot_label.setPixmap(pixmap.scaled(self.screenshot_label.size(), 
-                                                      Qt.KeepAspectRatio, 
-                                                      Qt.SmoothTransformation))
-
     def update_screenshot_live(self):
         '''
         Capture the screenshot based on current selection and update the QLabel with the image
@@ -171,14 +159,6 @@ class ScreenshotApp(QWidget):
             image = self.screenshot_image[selection.top : selection.top + selection.height,
                                           selection.left : selection.left + selection.width]
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            # Ensure the image is contiguous
-            if not image.flags['C_CONTIGUOUS']:
-                image = np.ascontiguousarray(image)
-            height, width, channel = image.shape
-            image = QImage(image.data, width, height, width * channel, QImage.Format_RGB888)
-            pixmap = QPixmap.fromImage(image)
-            self.screenshot_label.setPixmap(pixmap.scaled(self.screenshot_label.size(),
-                                            Qt.KeepAspectRatio,
-                                            Qt.SmoothTransformation))
+            self.screenshot_label.setImage(image)
         except:
             return None
