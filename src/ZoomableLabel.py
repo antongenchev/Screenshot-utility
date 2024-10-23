@@ -40,10 +40,21 @@ class ZoomableLabel(QLabel):
 
     def wheelEvent(self, event):
         '''
-        Scale the image on scrolling the mouse: zoom in - zoom out
+        Scale the image on scrolling the mouse: zoom in - zoom out,
+        with the zoom cetnered around the mouse cursor.
         '''
+        mouse_pos_widget = event.pos()
+        # Convert the mouse position to image coordinates
+        mouse_pos_image_x = (mouse_pos_widget.x() - self.offset.x()) / self.scale_factor
+        mouse_pos_image_y = (mouse_pos_widget.y() - self.offset.y()) / self.scale_factor
+        # Determine and apply zoom factor
         factor = 1.2 if event.angleDelta().y() > 0 else 0.8
         self.scale_factor *= factor
+        # Update the offset to ensure the mouse position stays at the same point in the image
+        new_mouse_pos_image_x = (mouse_pos_widget.x() - self.offset.x()) / self.scale_factor
+        new_mouse_pos_image_y = (mouse_pos_widget.y() - self.offset.y()) / self.scale_factor
+        self.offset.setX(self.offset.x() + int((new_mouse_pos_image_x - mouse_pos_image_x) * self.scale_factor))
+        self.offset.setY(self.offset.y() + int((new_mouse_pos_image_y - mouse_pos_image_y) * self.scale_factor))
         self.update()
 
     def mousePressEvent(self, event):
