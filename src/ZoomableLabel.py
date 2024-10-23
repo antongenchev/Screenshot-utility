@@ -7,6 +7,8 @@ class ZoomableLabel(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.original_image = None
+        self.subimage = None # part of self.original_image (to avoid drawing more than neccessary)
+        self.img_width, self.img_height = None, None
         self.scale_factor = 1.0
         self.offset = QPoint(0, 0)
         self.last_mouse_pos = None
@@ -16,7 +18,25 @@ class ZoomableLabel(QLabel):
         Set the OpenCV image and convert it to QImage
         '''
         self.original_image = image
-        self.update()  # Update the label to repaint with the new image
+        # Calculate new initial scale factor
+        self.img_height, self.img_width, _ = self.original_image.shape
+        scale_horizontal = self.width() / self.img_width
+        scale_vertical = self.height() / self.img_height
+        self.scale_factor = min(scale_horizontal, scale_vertical) # scale to fit perfectly
+
+        # Calculate new offset so that the image is centered
+        if scale_vertical > scale_horizontal:
+            # Center vertically
+            scaled_height = self.img_height * self.scale_factor # the height of the displayed image
+            vertical_offset = (self.height() - scaled_height) / 2 # center vertically
+            self.offset = QPoint(0, int(vertical_offset))
+        else:
+            # Center horizontally
+            scaled_width = self.img_width * self.scale_factor # the width of the displayed image
+            horizontal_offset = (self.width() - scaled_width) / 2 # center hotizontally
+            self.offset = QPoint(int(horizontal_offset), 0)
+
+        self.update() # Update the label to repaint with the new image
 
     def wheelEvent(self, event):
         '''
@@ -51,12 +71,34 @@ class ZoomableLabel(QLabel):
         ''' Draw the scaled and translated image '''
         if self.original_image is None:
             return # No image to display
+
+        # Update the subimage
+        self.update_sub_image()
+
         # Convert OpenCV image to QImage
-        height, width, channel = self.original_image.shape
+        height, width, channel = self.subimage.shape
         bytes_per_line = channel * width
-        q_image = QImage(self.original_image.data, width, height, bytes_per_line, QImage.Format_RGB888)
+        q_image = QImage(self.subimage.data.tobytes(), width, height, bytes_per_line, QImage.Format_RGB888)
+
         # Draw the scaled and translated image
         painter = QPainter(self)
         scaled_image = q_image.scaled(width * self.scale_factor, height * self.scale_factor, Qt.IgnoreAspectRatio, Qt.FastTransformation)
+        print(f'{self.offset=}')
         painter.drawImage(self.offset, scaled_image)
 
+    def update_sub_image(self):
+        '''
+        Update self.subimage.
+        Update the subimage only when we are close to the edge to make sure it contains the part of the image that we want to show
+        '''
+        # Estimate the portion of the opencv image that will fit inside the widget
+        left = int(self.offset.x() / self.scale_factor) # approximate the column idx of the opencv image
+        top = int(self.offset.y() / self.scale_factor) # approximate the row idx of the opencv image
+        width = int(self.width() /self.scale_factor) # approxiimate the width
+        height = int(self.height() /self.scale_factor) # approxiimate the height
+        # Expand the portion to cut more than what is required
+        left = max(0, left - 2 * width)
+        top = max(0, top - 2 * height)
+        right = min(self.img_width, left + 4 * width)
+        bottom = min(self.img_height, height + 4 * height)
+        self.subimage = self.original_image[top:bottom, left:right]
