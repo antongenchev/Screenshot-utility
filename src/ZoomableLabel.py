@@ -3,6 +3,7 @@ from PyQt5.QtGui import QPainter, QImage
 from PyQt5.QtCore import Qt, QPoint
 import numpy as np
 from src.utils import Box
+from src.config import config
 
 class ZoomableLabel(QLabel):
     def __init__(self, parent=None):
@@ -50,9 +51,21 @@ class ZoomableLabel(QLabel):
         # Convert the mouse position to image coordinates
         mouse_pos_image_x = (mouse_pos_widget.x() - self.offset.x()) / self.scale_factor
         mouse_pos_image_y = (mouse_pos_widget.y() - self.offset.y()) / self.scale_factor
+
         # Determine and apply zoom factor
         factor = 1.2 if event.angleDelta().y() > 0 else 0.8
-        self.scale_factor *= factor
+        new_scale = self.scale_factor * factor
+        if factor > 1:
+            # Approximate the number of visible pixels. If its too small do not allow zoom in
+            width = self.width() / new_scale
+            height = self.height() / new_scale
+            if min(width, height) < config['zoomableLabel']['min_pixels_per_side']:
+                return
+        elif new_scale < config['zoomableLabel']['minimum_scale']:
+            # If the scale is too small do not allow zoomout
+            return
+        self.scale_factor = new_scale
+
         # Update the offset to ensure the mouse position stays at the same point in the image
         new_mouse_pos_image_x = (mouse_pos_widget.x() - self.offset.x()) / self.scale_factor
         new_mouse_pos_image_y = (mouse_pos_widget.y() - self.offset.y()) / self.scale_factor

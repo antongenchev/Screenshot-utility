@@ -19,5 +19,9 @@
     },
     "mementos": {
         "max_num_mementos": 100
+    },
+    "zoomableLabel": {
+        "min_pixels_per_side": 3,
+        "minimum_scale": 0.01
     }
 }
