@@ -22,6 +22,7 @@
     },
     "zoomableLabel": {
         "min_pixels_per_side": 3,
-        "minimum_scale": 0.01
+        "minimum_scale": 0.01,
+        "minimum_visible_portion": 0.1
     }
 }
