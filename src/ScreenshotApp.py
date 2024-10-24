@@ -89,6 +89,7 @@ class ScreenshotApp(QWidget):
         self.transparent_window.show()
         # Connect the signal from the DraggableBox for screenshot selection (tracks any movement)
         self.transparent_window.draggable_widget.signal_selection_change_light.connect(self.update_screenshot_selection)
+        self.transparent_window.signal_selection_change.connect(self.update_screenshot_selection)
         # Connect the signal from the TransparentWindow to get updates of the selection (not while dragging/resizing)
         self.transparent_window.signal_selection_change.connect(self.update_screenshot_live)
 
@@ -118,7 +119,10 @@ class ScreenshotApp(QWidget):
                             int(self.field_top.text()),
                             int(self.field_width.text()),
                             int(self.field_height.text()))
+            # Send the selection to the TransparentWindow
             self.transparent_window.on_change_selection_from_screenshot_app(selection)
+            # Update the image in the Zoomable label in ScreenshotApp
+            self.update_screenshot_live()
         except Exception as e:
             print(str(e))
 
