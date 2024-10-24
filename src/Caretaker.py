@@ -7,7 +7,7 @@ class Caretaker():
         self._idx = {} # obj_id -> index of current memento
         self._max_mementos = {} # obj_id -> the maximum number of mementos to be stored
 
-    def save(self, obj_id, memento:Memento):
+    def save(self, obj_id:str, memento:Memento) -> None:
         '''
         Save the memento and append it to the history. Update the current index
 
@@ -19,15 +19,27 @@ class Caretaker():
             self._mementos[obj_id] = []
             self._idx[obj_id] = -1
             self._max_mementos[obj_id] = config['mementos']['max_num_mementos']
+
+        # Check if we should overwrite mementos
+        if len(self._mementos[obj_id]) > 0 and self._idx[obj_id] == len(self._mementos[obj_id]) - 1:
+            # We are on the newest memento. Compare the newest memento with the the new one
+            if memento.is_related(self._mementos[obj_id][-1]):
+                # Overwrite the last memento if they are related
+                self._mementos[obj_id][-1] = memento
+                return
+
         # Remove any mementos after the current index (in case of undone steps)
         if len(self._mementos[obj_id]) > 0 and self._idx[obj_id] < len(self._mementos[obj_id]) - 1:
             self._mementos[obj_id] = self._mementos[obj_id][:self._idx[obj_id] + 1]
+
         # Append the new memento
         self._mementos[obj_id].append(memento)
+
         # Check if the number of mementos exceeds the maximum limit
         if len(self._mementos[obj_id]) > self._max_mementos[obj_id]:
             # Remove the oldest memento
             self._mementos[obj_id].pop(0)
+
         # Updae the current index to point to the last memento
         self._idx[obj_id] = len(self._mementos[obj_id]) - 1
 

@@ -5,7 +5,7 @@ from PyQt5.QtGui import QPainter, QPen, QKeySequence
 from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication, QShortcut
 from src.DraggableBox import DraggableBox
 from src.OverlayWidget import OverlayWidget
-from src.Memento import Memento
+from src.Memento import MementoTransparentWindow
 from src.Caretaker import caretaker
 from src.utils import Box
 from src.config import *
@@ -98,7 +98,7 @@ class TransparentWindow(QMainWindow):
             self.overlay.end_pos = event_pos
             # Create the new draggable widget
             if self.start_pos and self.end_pos:
-                self.create_draggable_widget()
+                self.update_draggable_widget()
         self.is_drawing = False
         self.overlay.is_drawing = False
 
@@ -117,7 +117,19 @@ class TransparentWindow(QMainWindow):
                     self.mouseReleaseEvent(event, event_pos=event_pos)
         return super().eventFilter(obj, event)
 
-    def create_draggable_widget(self):
+    def on_change_selection_from_screenshot_app(self, selection:Box):
+        '''
+        Handle the screenshot selection being updated from the main app. Update the selection
+        Do not send a signal back to the ScreenshotApp!
+        Seave memento
+
+        Parameters:
+            selection: (Box) the left, top, width, height selection of the draggable widget
+        '''
+        self.draggable_widget.on_change_selection(selection)
+        self.save_memento(source='ScreenshotApp')
+
+    def update_draggable_widget(self):
         # Calculate the position and size of the new DraggableBox
         left = min(self.start_pos.x(), self.end_pos.x())
         top = min(self.start_pos.y(), self.end_pos.y())
@@ -170,14 +182,18 @@ class TransparentWindow(QMainWindow):
         if memento:
             self.load_memento(memento)
 
-    def save_memento(self) -> Memento:
+    def save_memento(self, source:str=None) -> MementoTransparentWindow:
         '''
         Return a memento with the state of the current Transparent Window
+
+        Parameters:
+            source: the source / origin of the memento. Use ScreenshotApp if it comes from the ScreenshotApp
         '''
-        memento = Memento(selection=self.draggable_widget.selection)
+        memento = MementoTransparentWindow(selection=self.draggable_widget.selection)
+        memento._source = source
         caretaker.save('TransparentWindow', memento)
 
-    def load_memento(self, m:Memento) -> None:
+    def load_memento(self, m:MementoTransparentWindow) -> None:
         '''
         Load a Memento
         '''

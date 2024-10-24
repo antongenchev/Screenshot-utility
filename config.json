@@ -18,11 +18,13 @@
         "screenshot_selection": "/home/default/Desktop/screenshot/Screenshot-utility/photos/screenshot/screenshot_selection.png"
     },
     "mementos": {
-        "max_num_mementos": 100
+        "max_num_mementos": 100,
+        "time_limits": {
+            "MementoTransparentWindow": 1.5
+        }
     },
     "zoomableLabel": {
         "min_pixels_per_side": 3,
-        "minimum_scale": 0.01,
-        "minimum_visible_portion": 0.1
+        "minimum_scale": 0.01
     }
 }

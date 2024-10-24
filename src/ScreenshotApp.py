@@ -118,7 +118,7 @@ class ScreenshotApp(QWidget):
                             int(self.field_top.text()),
                             int(self.field_width.text()),
                             int(self.field_height.text()))
-            self.transparent_window.draggable_widget.on_change_selection(selection)
+            self.transparent_window.on_change_selection_from_screenshot_app(selection)
         except Exception as e:
             print(str(e))
 
