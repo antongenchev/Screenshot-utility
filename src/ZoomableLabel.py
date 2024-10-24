@@ -2,15 +2,17 @@ from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QPainter, QImage
 from PyQt5.QtCore import Qt, QPoint
 import numpy as np
+from src.utils import Box
 
 class ZoomableLabel(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.original_image = None
         self.subimage = None # part of self.original_image (to avoid drawing more than neccessary)
-        self.img_width, self.img_height = None, None
-        self.scale_factor = 1.0
-        self.offset = QPoint(0, 0)
+        self.img_width, self.img_height = None, None # width and height of original image
+        self.subimage_selection = None # Box(left, top, width, height)
+        self.scale_factor = 1.0 # cv2_image_coordinate * scale_factor -> widget_coordinate
+        self.offset = QPoint(0, 0) # offset in widget coordinates
         self.last_mouse_pos = None
 
     def setImage(self, image):
@@ -35,7 +37,8 @@ class ZoomableLabel(QLabel):
             scaled_width = self.img_width * self.scale_factor # the width of the displayed image
             horizontal_offset = (self.width() - scaled_width) / 2 # center hotizontally
             self.offset = QPoint(int(horizontal_offset), 0)
-
+        self.subimage = self.original_image
+        self.subimage_selection = Box(0, 0, self.img_width, self.img_height)
         self.update() # Update the label to repaint with the new image
 
     def wheelEvent(self, event):
@@ -84,7 +87,7 @@ class ZoomableLabel(QLabel):
             return # No image to display
 
         # Update the subimage
-        self.update_sub_image()
+        self.update_subimage()
 
         # Convert OpenCV image to QImage
         height, width, channel = self.subimage.shape
@@ -94,22 +97,35 @@ class ZoomableLabel(QLabel):
         # Draw the scaled and translated image
         painter = QPainter(self)
         scaled_image = q_image.scaled(width * self.scale_factor, height * self.scale_factor, Qt.IgnoreAspectRatio, Qt.FastTransformation)
-        print(f'{self.offset=}')
         painter.drawImage(self.offset, scaled_image)
 
-    def update_sub_image(self):
+    def update_subimage(self):
         '''
         Update self.subimage.
         Update the subimage only when we are close to the edge to make sure it contains the part of the image that we want to show
         '''
-        # Estimate the portion of the opencv image that will fit inside the widget
-        left = int(self.offset.x() / self.scale_factor) # approximate the column idx of the opencv image
-        top = int(self.offset.y() / self.scale_factor) # approximate the row idx of the opencv image
-        width = int(self.width() /self.scale_factor) # approxiimate the width
-        height = int(self.height() /self.scale_factor) # approxiimate the height
-        # Expand the portion to cut more than what is required
-        left = max(0, left - 2 * width)
-        top = max(0, top - 2 * height)
-        right = min(self.img_width, left + 4 * width)
-        bottom = min(self.img_height, height + 4 * height)
+        old_subimage_selection = self.subimage_selection
+
+        # Convert the offset to a position on the image
+        offset_pos_subimage_x = -self.offset.x() / self.scale_factor
+        offset_pos_subimage_y = -self.offset.y() / self.scale_factor
+        offset_pos_image_x = self.subimage_selection.left + offset_pos_subimage_x
+        offset_pos_image_y = self.subimage_selection.top + offset_pos_subimage_y
+
+        # Estimate the width and height of the visible part of the image
+        width = max(2, int(self.width() / self.scale_factor))
+        height = max(2, int(self.height() / self.scale_factor))
+
+        # Get a big subimage containing the visible part of the image
+        left = max(0, int(offset_pos_image_x - width))
+        top = max(0, int(offset_pos_image_y - height))
+        right = min(self.img_width, int(offset_pos_image_x + 2 * width))
+        bottom = min(self.img_height, int(offset_pos_image_y + 2 * height))
+
+        # Update the subimage
         self.subimage = self.original_image[top:bottom, left:right]
+        self.subimage_selection = Box(left, top, right - left, bottom - top)
+
+        # Update the offset
+        self.offset.setX(self.offset.x() + self.scale_factor * (self.subimage_selection.left - old_subimage_selection.left))
+        self.offset.setY(self.offset.y() + self.scale_factor * (self.subimage_selection.top - old_subimage_selection.top))
