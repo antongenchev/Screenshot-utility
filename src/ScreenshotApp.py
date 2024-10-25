@@ -3,6 +3,7 @@ from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtGui import QPixmap, QImage
 from src.TransparentWindow import TransparentWindow
 from src.ZoomableLabel import ZoomableLabel
+from src.ImagePorcessor import ImageProcessor
 from mss import mss
 import cv2
 import numpy as np
@@ -44,6 +45,11 @@ class ScreenshotApp(QWidget):
         self.screenshot_label.setFixedSize(600, 400)  # Set some default size
         self.screenshot_label.setStyleSheet("border: 1px solid black")
         self.layout.addWidget(self.screenshot_label)
+
+        # Image Processor sublayout
+        self.image_processor = ImageProcessor(self.screenshot_label)
+        self.image_processor.image_updated.connect(self.update_screenshot_live)
+        self.layout.addWidget(self.image_processor)
 
         # Menu for changing the screenshot selection
         grid_layout = QGridLayout()
