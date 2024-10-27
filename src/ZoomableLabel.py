@@ -1,20 +1,27 @@
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QPainter, QImage
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtCore import Qt, QPoint, pyqtSignal
 import numpy as np
 from src.utils import Box
 from src.config import config
 
 class ZoomableLabel(QLabel):
+
+    draw_signal = pyqtSignal(int, int) # Signal with x, y coordinates for the ImageProcessor
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.original_image = None
-        self.subimage = None # part of self.original_image (to avoid drawing more than neccessary)
+        self.transformed_image = None # the original image after any image processing transformations
+        self.subimage = None # part of self.transformed_image (to avoid drawing more than neccessary)
         self.img_width, self.img_height = None, None # width and height of original image
         self.subimage_selection = None # Box(left, top, width, height)
         self.scale_factor = 1.0 # cv2_image_coordinate * scale_factor -> widget_coordinate
         self.offset = QPoint(0, 0) # offset in widget coordinates
         self.last_mouse_pos = None
+        self.mouse_pressed = None
+
+        self.drawing_enabled = False # Flag to track if drawing mode is active (i.e. send events to ImageProcessor)
 
     def setImage(self, image):
         '''
@@ -38,7 +45,8 @@ class ZoomableLabel(QLabel):
             scaled_width = self.img_width * self.scale_factor # the width of the displayed image
             horizontal_offset = (self.width() - scaled_width) / 2 # center hotizontally
             self.offset = QPoint(int(horizontal_offset), 0)
-        self.subimage = self.original_image
+        self.transformed_image = self.original_image
+        self.subimage = self.transformed_image
         self.subimage_selection = Box(0, 0, self.img_width, self.img_height)
         self.update() # Update the label to repaint with the new image
 
@@ -79,12 +87,24 @@ class ZoomableLabel(QLabel):
         '''
         if event.button() == Qt.LeftButton:
             self.last_mouse_pos = event.pos()
+            self.mouse_pressed = True
 
     def mouseMoveEvent(self, event):
         '''
         Handle dragging the image
         '''
-        if self.last_mouse_pos is not None:
+        if not self.mouse_pressed:
+            return
+
+        if self.drawing_enabled:
+            # Convert widget coordinates to image coordinates
+            x = int((event.pos().x() - self.offset.x()) / self.scale_factor)
+            y = int((event.pos().y() - self.offset.y()) / self.scale_factor)
+            # Check if the coordinates are within the image bounds
+            if 0 <= x < self.img_width and 0 <= y < self.img_height:
+                self.draw_signal.emit(x, y)
+        else:
+            # Move the image
             delta = event.pos() - self.last_mouse_pos
             self.offset += delta
             self.last_mouse_pos = event.pos()
@@ -93,6 +113,7 @@ class ZoomableLabel(QLabel):
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.last_mouse_pos = None
+            self.mouse_pressed = False
 
     def paintEvent(self, event):
         ''' Draw the scaled and translated image '''
@@ -136,9 +157,18 @@ class ZoomableLabel(QLabel):
         bottom = min(self.img_height, int(offset_pos_image_y + 2 * height))
 
         # Update the subimage
-        self.subimage = self.original_image[top:bottom, left:right]
+        self.subimage = self.transformed_image[top:bottom, left:right]
         self.subimage_selection = Box(left, top, right - left, bottom - top)
 
         # Update the offset
         self.offset.setX(self.offset.x() + self.scale_factor * (self.subimage_selection.left - old_subimage_selection.left))
         self.offset.setY(self.offset.y() + self.scale_factor * (self.subimage_selection.top - old_subimage_selection.top))
+
+    def update_transformed_image(self, transformed_image):
+        '''
+        Update self.transformed_image
+        '''
+        self.transformed_image = transformed_image
+        self.subimage = self.transformed_image[self.subimage_selection.top : self.subimage_selection.top + self.subimage_selection.height,
+                                               self.subimage_selection.left : self.subimage_selection.left + self.subimage_selection.width]
+        self.update()
