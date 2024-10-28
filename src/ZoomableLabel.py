@@ -98,18 +98,15 @@ class ZoomableLabel(QLabel):
             self.start_draw_signal.emit(x, y)
         else:
             self.last_mouse_pos = event.pos()
-            print(704)
         self.mouse_pressed = True
 
     def mouseMoveEvent(self, event):
         '''
         Handle dragging the image
         '''
-        print(702)
         if not self.mouse_pressed:
             return
 
-        print(701, self.drawing_enabled)
         if self.drawing_enabled:
             # Convert widget coordinates to image coordinates
             x, y = self.convert_to_img_coor(event.pos())
@@ -132,7 +129,6 @@ class ZoomableLabel(QLabel):
             self.stop_draw_signal.emit(x, y)
         else:
             self.last_mouse_pos = None
-            print(703)
             self.mouse_pressed = False
 
     def paintEvent(self, event):

@@ -26,5 +26,14 @@
     "zoomableLabel": {
         "min_pixels_per_side": 3,
         "minimum_scale": 0.01
-    }
+    },
+    "tools": [
+        {
+            "name": "PencilTool",
+            "order": 1,
+            "options": {
+                
+            }
+        }
+    ]
 }

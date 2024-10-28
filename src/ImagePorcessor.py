@@ -3,10 +3,12 @@ from PyQt5.QtCore import pyqtSignal, QTimer
 from PyQt5.QtGui import QPixmap
 import cv2
 import numpy as np
-from src.ZoomableLabel import ZoomableLabel
 from enum import IntEnum, auto
 from scipy.interpolate import CubicSpline
+from src.ZoomableLabel import ZoomableLabel
 
+# Import ImageProcessingTools
+from src.ImageProcessingTools.PencilTool import PencilTool
 
 class ImageProcessor(QWidget):
 
