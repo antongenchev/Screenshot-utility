@@ -98,8 +98,8 @@ class ZoomableLabel(QLabel):
 
         if self.drawing_enabled:
             # Convert widget coordinates to image coordinates
-            x = int((event.pos().x() - self.offset.x()) / self.scale_factor)
-            y = int((event.pos().y() - self.offset.y()) / self.scale_factor)
+            x = int((event.pos().x() - self.offset.x()) / self.scale_factor) + self.subimage_selection.left
+            y = int((event.pos().y() - self.offset.y()) / self.scale_factor) + self.subimage_selection.top
             # Check if the coordinates are within the image bounds
             if 0 <= x < self.img_width and 0 <= y < self.img_height:
                 self.draw_signal.emit(x, y)
