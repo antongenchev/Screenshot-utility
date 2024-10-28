@@ -14,8 +14,11 @@ from src.config import *
 class ScreenshotApp(QWidget):
     def __init__(self):
         super().__init__()
-        self.initGUI()
         self.screenshot_image = None
+        self.screenshot_label = ZoomableLabel(self)
+        self.image_processor = ImageProcessor(self.screenshot_label)
+        self.screenshot_label.draw_signal.connect(self.image_processor.handle_draw)
+        self.initGUI()
 
     def initGUI(self):
         '''
@@ -41,14 +44,11 @@ class ScreenshotApp(QWidget):
         self.layout.addLayout(h_layout)
 
         # Label to display the screenshot
-        self.screenshot_label = ZoomableLabel(self)
         self.screenshot_label.setFixedSize(600, 400)  # Set some default size
         self.screenshot_label.setStyleSheet("border: 1px solid black")
         self.layout.addWidget(self.screenshot_label)
 
         # Image Processor sublayout
-        self.image_processor = ImageProcessor(self.screenshot_label)
-        self.image_processor.image_updated.connect(self.update_screenshot_live)
         self.layout.addWidget(self.image_processor)
 
         # Menu for changing the screenshot selection
