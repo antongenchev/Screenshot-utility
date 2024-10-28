@@ -10,6 +10,7 @@ class PencilTool(ImageProcessingTool):
         self.button = QPushButton('Draw')
         self.button.setCheckable(True)
         self.button.clicked.connect(self.toggle_drawing)
+        return self.button
 
     def on_mouse_press(self, x: int, y: int):
         pass
@@ -19,3 +20,11 @@ class PencilTool(ImageProcessingTool):
 
     def on_mouse_release(self, x: int, y: int):
         pass
+
+    def toggle_drawing(self):
+        if self.drawing_enabled:
+            self.disable()
+            self.button.setChecked(False)
+        else:
+            self.enable()
+            self.button.setChecked(True)
