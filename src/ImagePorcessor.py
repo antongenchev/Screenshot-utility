@@ -4,35 +4,36 @@ from PyQt5.QtGui import QPixmap
 import cv2
 import numpy as np
 from src.ZoomableLabel import ZoomableLabel
+from enum import IntEnum, auto
 
 
 class ImageProcessor(QWidget):
+
+    # The available image processing tools
+    class tools(IntEnum):
+        move = 0
+        pencil = auto()
 
     def __init__(self, zoomable_label):
         super().__init__()
         self.zoomable_label = zoomable_label
         self.zoomable_label:ZoomableLabel
+        self.current_tool = self.tools.move
         self.initUI()
 
     def initUI(self):
         layout = QVBoxLayout()
 
-        draw_button = QPushButton('Draw', self)
-        draw_button.setCheckable(True)
-        draw_button.clicked.connect(self.on_draw)
+        pencil_button = QPushButton('Draw', self)
+        pencil_button.setCheckable(True)
+        pencil_button.clicked.connect(self.on_pencil)
 
-        layout.addWidget(draw_button)
+        layout.addWidget(pencil_button)
         self.setLayout(layout)
 
-    def on_draw(self):
+    def on_pencil(self):
         self.drawing_enabled = True
         self.zoomable_label.drawing_enabled = self.drawing_enabled
-
-    def transform(self, image):
-        # Apply transformations to the image
-        transformed_image = image
-        # Emit the signal with the transformed image when done
-        self.image_transformed.emit(transformed_image)
 
     def handle_draw(self, x:int, y:int):
         '''
@@ -46,6 +47,6 @@ class ImageProcessor(QWidget):
             # Apply drawing on the image at the (x, y) location
             color = (255, 0, 0)  # Red color for example
             thickness = 5  # Example thickness
-            transformed_image = cv2.circle(self.zoomable_label.transformed_image.copy(), (x, y), thickness, color, -1)
+            cv2.circle(self.zoomable_label.transformed_image, (x, y), thickness, color, -1)
             # Update the ZoomableLabel with the modified image
-            self.zoomable_label.update_transformed_image(transformed_image)
+            self.zoomable_label.update_transformed_image()
