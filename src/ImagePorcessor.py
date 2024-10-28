@@ -1,10 +1,11 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, QTimer
 from PyQt5.QtGui import QPixmap
 import cv2
 import numpy as np
 from src.ZoomableLabel import ZoomableLabel
 from enum import IntEnum, auto
+from scipy.interpolate import CubicSpline
 
 
 class ImageProcessor(QWidget):
@@ -50,3 +51,23 @@ class ImageProcessor(QWidget):
             cv2.circle(self.zoomable_label.transformed_image, (x, y), thickness, color, -1)
             # Update the ZoomableLabel with the modified image
             self.zoomable_label.update_transformed_image()
+
+    def handle_start_draw(self, x:int, y:int):
+        '''
+        Handle signals from the ZoomableLabel for left mouse button down event
+
+        Parameters:
+            x - the x coordinate of the event on the image
+            y - the y coordinate of the event on the image
+        '''
+        pass
+
+    def handle_stop_draw(self, x:int, y:int):
+        '''
+        Handle signals from the ZoomableLabel for left mouse button release event
+
+        Parameters:
+            x - the x coordinate of the event on the image
+            y - the y coordinate of the event on the image
+        '''
+        pass

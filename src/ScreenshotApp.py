@@ -17,7 +17,11 @@ class ScreenshotApp(QWidget):
         self.screenshot_image = None
         self.screenshot_label = ZoomableLabel(self)
         self.image_processor = ImageProcessor(self.screenshot_label)
+
         self.screenshot_label.draw_signal.connect(self.image_processor.handle_draw)
+        self.screenshot_label.start_draw_signal.connect(self.image_processor.handle_start_draw)
+        self.screenshot_label.stop_draw_signal.connect(self.image_processor.handle_stop_draw)
+
         self.initGUI()
 
     def initGUI(self):

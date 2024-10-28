@@ -2,12 +2,16 @@ from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QPainter, QImage
 from PyQt5.QtCore import Qt, QPoint, pyqtSignal
 import numpy as np
+from typing import Tuple
 from src.utils import Box
 from src.config import config
 
 class ZoomableLabel(QLabel):
 
-    draw_signal = pyqtSignal(int, int) # Signal with x, y coordinates for the ImageProcessor
+    # Signals with x, y coordinates for the ImageProcessor
+    draw_signal = pyqtSignal(int, int)
+    start_draw_signal = pyqtSignal(int, int)
+    stop_draw_signal = pyqtSignal(int, int)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -85,24 +89,32 @@ class ZoomableLabel(QLabel):
         '''
         Start dragging the image
         '''
-        if event.button() == Qt.LeftButton:
+        if event.button() != Qt.LeftButton:
+            return
+
+        if self.drawing_enabled:
+            # Emit a signal for the ImageProcessor
+            x, y = self.convert_to_img_coor(event.pos())
+            self.start_draw_signal.emit(x, y)
+        else:
             self.last_mouse_pos = event.pos()
-            self.mouse_pressed = True
+            print(704)
+        self.mouse_pressed = True
 
     def mouseMoveEvent(self, event):
         '''
         Handle dragging the image
         '''
+        print(702)
         if not self.mouse_pressed:
             return
 
+        print(701, self.drawing_enabled)
         if self.drawing_enabled:
             # Convert widget coordinates to image coordinates
-            x = int((event.pos().x() - self.offset.x()) / self.scale_factor) + self.subimage_selection.left
-            y = int((event.pos().y() - self.offset.y()) / self.scale_factor) + self.subimage_selection.top
-            # Check if the coordinates are within the image bounds
-            if 0 <= x < self.img_width and 0 <= y < self.img_height:
-                self.draw_signal.emit(x, y)
+            x, y = self.convert_to_img_coor(event.pos())
+            # Emit a signal for the ImageProcessor
+            self.draw_signal.emit(x, y)
         else:
             # Move the image
             delta = event.pos() - self.last_mouse_pos
@@ -111,8 +123,16 @@ class ZoomableLabel(QLabel):
             self.update()
 
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() != Qt.LeftButton:
+            return None
+        
+        if self.drawing_enabled:
+            # Emit a signal for the ImageProcessor
+            x, y = self.convert_to_img_coor(event.pos().x(), event.pos().y())
+            self.stop_draw_signal.emit(x, y)
+        else:
             self.last_mouse_pos = None
+            print(703)
             self.mouse_pressed = False
 
     def paintEvent(self, event):
@@ -171,3 +191,23 @@ class ZoomableLabel(QLabel):
         self.subimage = self.transformed_image[self.subimage_selection.top : self.subimage_selection.top + self.subimage_selection.height,
                                                self.subimage_selection.left : self.subimage_selection.left + self.subimage_selection.width]
         self.update()
+
+    def convert_to_img_coor(self, x:float=None, y:float=None) -> Tuple[int, int]:
+        '''
+        Transform the coordinates relative to the widget to coordinates describing the pixel of the image above which the event occured
+
+        Parameters:
+            x: the x-coordinate relative to the ZoomableLabel
+            y: the y-coordinate relative to the ZoomableLabel
+        '''
+        # Handle passing the two coordinates as one argument
+        if y is None:
+            if type(x) == QPoint: # handle QPoint e.g. event.pos()
+                y = x.y()
+                x = x.x()
+            else: # handle lists and tuples
+                x = x[0]
+                y = y[1]
+        x = int((x - self.offset.x()) / self.scale_factor) + self.subimage_selection.left
+        y = int((y - self.offset.y()) / self.scale_factor) + self.subimage_selection.top
+        return (x, y)
