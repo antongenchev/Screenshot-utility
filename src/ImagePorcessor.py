@@ -36,9 +36,10 @@ class ImageProcessor(QWidget):
 
         for tool_name in sorted(self.tool_classes.keys(), key=lambda k: self.tool_classes[k]['order']):
             tool_class = self.tool_classes[tool_name]['class']
-            tool_widget = tool_class(self).create_ui()
+            tool_obj = tool_class(self)
+            tool_widget = tool_obj.create_ui()
+            tool_obj.enable()
             layout.addWidget(tool_widget)
-            tool_widget.clicked.connect(lambda _, t=tool_widget: self.set_tool(t))
 
         self.setLayout(layout)
 
@@ -55,11 +56,7 @@ class ImageProcessor(QWidget):
     def set_tool(self, tool: ImageProcessingTool):
         self.current_tool = tool
 
-    def on_pencil(self):
-        self.drawing_enabled = True
-        self.zoomable_label.drawing_enabled = self.drawing_enabled
-
-    def handle_draw(self, x:int, y:int):
+    def on_mouse_move(self, x:int, y:int):
         '''
         Handle signals from the ZoomableLabel.
 
@@ -75,7 +72,7 @@ class ImageProcessor(QWidget):
             # Update the ZoomableLabel with the modified image
             self.zoomable_label.update_transformed_image()
 
-    def handle_start_draw(self, x:int, y:int):
+    def on_mouse_down(self, x:int, y:int):
         '''
         Handle signals from the ZoomableLabel for left mouse button down event
 
@@ -85,7 +82,7 @@ class ImageProcessor(QWidget):
         '''
         pass
 
-    def handle_stop_draw(self, x:int, y:int):
+    def on_mouse_up(self, x:int, y:int):
         '''
         Handle signals from the ZoomableLabel for left mouse button release event
 

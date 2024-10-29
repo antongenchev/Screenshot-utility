@@ -21,8 +21,21 @@ class ImageProcessingTool:
         """Called when the mouse is released."""
         raise NotImplementedError("This method should be overridden in subclasses.")
 
+    def set_tool(self):
+        '''
+        Set the current tool of the ImageProcessor to this ImageProcessing tool
+        '''
+        self.image_processor.set_tool(self)
+
     def enable(self):
         self.drawing_enabled = True
+        self.image_processor.drawing_enabled = True
+        self.image_processor.zoomable_label.drawing_enabled = True
 
     def disable(self):
         self.drawing_enabled = False
+        self.image_processor.drawing_enabled = False
+        self.image_processor.zoomable_label.drawing_enabled = False
+
+    def is_enabled(self) -> bool:
+        return self.drawing_enabled

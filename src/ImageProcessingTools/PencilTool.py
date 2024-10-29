@@ -1,5 +1,7 @@
 from src.ImageProcessingTools.ImageProcessingTool import ImageProcessingTool
 from PyQt5.QtWidgets import QPushButton
+import cv2
+from functools import partial
 
 class PencilTool(ImageProcessingTool):
     def __init__(self, image_processor):
@@ -8,23 +10,19 @@ class PencilTool(ImageProcessingTool):
     def create_ui(self):
         """Create the button for the pencil tool."""
         self.button = QPushButton('Draw')
-        self.button.setCheckable(True)
-        self.button.clicked.connect(self.toggle_drawing)
+        self.button.clicked.connect(partial(self.enable))
         return self.button
 
     def on_mouse_press(self, x: int, y: int):
         pass
 
     def on_mouse_move(self, x: int, y: int):
-        pass
+        # Apply drawing on the image at the (x, y) location
+        color = (255, 0, 0)  # Red color for example
+        thickness = 5  # Example thickness
+        cv2.circle(self.zoomable_label.transformed_image, (x, y), thickness, color, -1)
+        # Update the ZoomableLabel with the modified image
+        self.zoomable_label.update_transformed_image()
 
     def on_mouse_release(self, x: int, y: int):
         pass
-
-    def toggle_drawing(self):
-        if self.drawing_enabled:
-            self.disable()
-            self.button.setChecked(False)
-        else:
-            self.enable()
-            self.button.setChecked(True)
