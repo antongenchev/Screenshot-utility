@@ -64,13 +64,7 @@ class ImageProcessor(QWidget):
             x - the x coordinate of the event on the image
             y - the y coordinate of the event on the image
         '''
-        if self.drawing_enabled:
-            # Apply drawing on the image at the (x, y) location
-            color = (255, 0, 0)  # Red color for example
-            thickness = 5  # Example thickness
-            cv2.circle(self.zoomable_label.transformed_image, (x, y), thickness, color, -1)
-            # Update the ZoomableLabel with the modified image
-            self.zoomable_label.update_transformed_image()
+        self.current_tool.on_mouse_move(x, y)
 
     def on_mouse_down(self, x:int, y:int):
         '''
@@ -80,7 +74,7 @@ class ImageProcessor(QWidget):
             x - the x coordinate of the event on the image
             y - the y coordinate of the event on the image
         '''
-        pass
+        self.current_tool.on_mouse_down(x, y)
 
     def on_mouse_up(self, x:int, y:int):
         '''
@@ -90,4 +84,4 @@ class ImageProcessor(QWidget):
             x - the x coordinate of the event on the image
             y - the y coordinate of the event on the image
         '''
-        pass
+        self.current_tool.on_mouse_up(x, y)
