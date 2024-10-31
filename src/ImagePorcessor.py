@@ -38,7 +38,6 @@ class ImageProcessor(QWidget):
             tool_class = self.tool_classes[tool_name]['class']
             tool_obj = tool_class(self)
             tool_widget = tool_obj.create_ui()
-            tool_obj.enable()
             layout.addWidget(tool_widget)
 
         self.setLayout(layout)
