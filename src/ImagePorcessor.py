@@ -7,6 +7,7 @@ from enum import IntEnum, auto
 import importlib
 from scipy.interpolate import CubicSpline
 from src.ZoomableLabel import ZoomableLabel
+from src.Layer import Layer
 from src.config import config
 
 # Import ImageProcessingTools
@@ -26,6 +27,8 @@ class ImageProcessor(QWidget):
         self.zoomable_label:ZoomableLabel
         self.current_tool = None
         self.tool_classes = {}
+        self.layers = []
+        self.active_layer_index = 0
         self.initUI()
 
     def initUI(self):
@@ -84,3 +87,21 @@ class ImageProcessor(QWidget):
             y - the y coordinate of the event on the image
         '''
         self.current_tool.on_mouse_up(x, y)
+
+    def add_layer(self, image=None):
+        layer = Layer(image=image)
+        self.layers.append(layer)
+        self.active_layer_index = len(self.layers) - 1
+
+    def remove_layer(self, index):
+        if 0 <= index < len(self.layers):
+            del self.layers[index]
+            self.active_layer_index = min(self.active_layer_index, len(self.layers) - 1)
+
+    def set_active_layer(self, index):
+        if 0 <= index < len(self.layers):
+            self.active_layer_index = index
+
+    def toggle_layer_visibility(self, index):
+        if 0 <= index < len(self.layers):
+            self.layers[index].toggle_visibility()
