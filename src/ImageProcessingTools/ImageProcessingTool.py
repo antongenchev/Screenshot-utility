@@ -1,4 +1,4 @@
-
+from src.DrawableElement import DrawableElement
 
 class ImageProcessingTool:
     def __init__(self, image_processor):
@@ -55,3 +55,12 @@ class ImageProcessingTool:
             if self.__class__.__name__ == config_tool['name']:
                 self.config = config_tool
                 break
+
+    def add_drawable_element(self, drawable_element:DrawableElement):
+        '''
+        Add a DrawableElement to the active layer
+        '''
+        self.image_processor.layers[self.image_processor.active_layer_index].append(drawable_element)
+
+    def draw_drawable_element(self, drawable_element:DrawableElement):
+        pass

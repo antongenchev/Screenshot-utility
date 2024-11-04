@@ -27,8 +27,9 @@ class ImageProcessor(QWidget):
         self.zoomable_label:ZoomableLabel
         self.current_tool = None
         self.tool_classes = {}
-        self.layers = []
-        self.active_layer_index = 0
+        self.layers = [] # All the layers
+        self.fake_layer = None # layer for visualising stuff not part of what is drawn
+        self.active_layer_index = 0 # the index of the active layer
         self.initUI()
 
     def initUI(self):
@@ -105,3 +106,9 @@ class ImageProcessor(QWidget):
     def toggle_layer_visibility(self, index):
         if 0 <= index < len(self.layers):
             self.layers[index].toggle_visibility()
+
+    def render_layers(self):
+        '''
+        Render all layers
+        '''
+        self.zoomable_label.update_transformed_image()
