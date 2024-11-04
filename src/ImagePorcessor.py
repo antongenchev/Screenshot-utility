@@ -41,8 +41,7 @@ class ImageProcessor(QWidget):
         self.load_tools_from_config()
 
         for tool_name in sorted(self.tool_classes.keys(), key=lambda k: self.tool_classes[k]['order']):
-            tool_class = self.tool_classes[tool_name]['class']
-            tool_obj = tool_class(self)
+            tool_obj = self.tool_classes[tool_name]['object']
             tool_widget = tool_obj.create_ui()
             layout.addWidget(tool_widget)
 
@@ -53,9 +52,11 @@ class ImageProcessor(QWidget):
             tool_name = tool["name"]
             module = importlib.import_module(f'src.ImageProcessingTools.{tool_name}')
             tool_class = getattr(module, tool_name)
+            tool_obj = tool_class(self)
             self.tool_classes[tool_name] = {
                 'class': tool_class,
-                'order': tool['order']
+                'object': tool_obj,
+                'order': tool['order'],
             }
 
     def set_tool(self, tool: ImageProcessingTool):
