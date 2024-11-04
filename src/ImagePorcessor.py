@@ -5,9 +5,11 @@ import cv2
 import numpy as np
 from enum import IntEnum, auto
 import importlib
+from typing import List
 from scipy.interpolate import CubicSpline
 from src.ZoomableLabel import ZoomableLabel
 from src.Layer import Layer
+from src.DrawableElement import DrawableElement
 from src.config import config
 
 # Import ImageProcessingTools
@@ -112,3 +114,20 @@ class ImageProcessor(QWidget):
         Render all layers
         '''
         self.zoomable_label.update_transformed_image()
+
+    def render_layer(self, index:int) -> None:
+        '''
+        Render the layer with index `index`.
+        That is update the final_image of the layer
+
+        Parameters:
+            index: the index of the layer in self.layers
+        '''
+        layer = self.layers[index]
+        for drawable_element in layer.elements:
+            self.render_element(self, drawable_element)
+            # add element to layer
+
+    def render_element(self, drawable_element:DrawableElement):
+        tool_name = drawable_element.tool
+        

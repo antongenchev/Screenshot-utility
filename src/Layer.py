@@ -4,6 +4,7 @@ from src.DrawableElement import DrawableElement
 class Layer:
     def __init__(self, image=None, visible=True):
         self.image = image # The starting image on which we draw
+        self.final_image = image
         self.visible = visible # Is the layer visible
         self.drawing_enabled = False
         self.elements = []
