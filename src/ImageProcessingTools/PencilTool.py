@@ -22,6 +22,12 @@ class PencilTool(ImageProcessingTool):
 
     def on_mouse_down(self, x: int, y: int):
         self.points = [(x, y)]
+        cv2.circle(self.image_processor.zoomable_label.transformed_image,
+                   (x, y),
+                   radius = 0,
+                   color=self.pencil_color,
+                   thickness=self.pencil_thickness)
+        self.image_processor.zoomable_label.update_transformed_image()
 
     def on_mouse_move(self, x: int, y: int):
         # Add the current point to the points list
@@ -41,6 +47,14 @@ class PencilTool(ImageProcessingTool):
                          thickness=self.pencil_thickness)
             # Update the ZoomableLabel with the modified image
             self.image_processor.zoomable_label.update_transformed_image()
+        elif len(self.points) == 2:
+            # Draw a line between the first 2 points
+            cv2.line(self.image_processor.zoomable_label.transformed_image,
+                     self.points[0],
+                     self.points[1],
+                     color=self.pencil_color,
+                     thickness=self.pencil_thickness)
+            self.image_processor.zoomable_label.update_transformed_image()
 
     def on_mouse_up(self, x: int, y: int):
         # Clear points to end the current line
@@ -52,6 +66,7 @@ class PencilTool(ImageProcessingTool):
                 'thickness': self.pencil_thickness
             }
             drawable_element = DrawableElement(self.__class__.__name__, instructions)
+            self.add_drawable_element(drawable_element)
             self.all_points = []
 
     def catmull_rom_spline(self, p0, p1, p2, p3, num_points=100):
@@ -76,3 +91,34 @@ class PencilTool(ImageProcessingTool):
                            (-p0 + 3*p1 - 3*p2 + p3) * t**3)
             interpolated_points.append((int(point[0]), int(point[1])))
         return interpolated_points
+    
+    def draw_drawable_element(self, drawable_element:DrawableElement):
+        points = drawable_element['instructions']['points']
+        color = drawable_element['instructions']['pencil_color']
+        thickness = drawable_element['instructions']['pencil_thickness']
+
+        # Draw the first point
+        if len(points) >= 1:
+            cv2.circle(drawable_element.image,
+                       (points[0]),
+                       radius = 0,
+                       color=color,
+                       thickness=thickness)
+        # Draw the line between the 1st and 2nd point
+        if len(points) >= 2:
+            cv2.line(drawable_element.image,
+                     points[0],
+                     points[1],
+                     color=color,
+                     thickness=thickness)
+        # Draw the rest of the interpolated points/lines
+        for i in range(1, len(points) - 3):
+            # draw the between points i and i+1
+            spline_points = self.catmull_rom_spline(points[i-1: i+3]) # calculate the spline points
+            # Draw lines between the interpolated points
+            for i in range(len(spline_points) - 1):
+                cv2.line(drawable_element.image,
+                         spline_points[i],
+                         spline_points[i + 1],
+                         color=self.pencil_color,
+                         thickness=self.pencil_thickness)
