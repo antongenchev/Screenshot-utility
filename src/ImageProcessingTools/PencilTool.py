@@ -4,11 +4,13 @@ import cv2
 import numpy as np
 from functools import partial
 from typing import List, Tuple
+from src.DrawableElement import DrawableElement
 
 class PencilTool(ImageProcessingTool):
     def __init__(self, image_processor):
         super().__init__(image_processor)
         self.points = [] # store the last 4 points
+        self.all_points = [] # store all the points
         self.pencil_color = self.config['options']['pencil_color']
         self.pencil_thickness = self.config['options']['pencil_thickness']
 
@@ -24,6 +26,7 @@ class PencilTool(ImageProcessingTool):
     def on_mouse_move(self, x: int, y: int):
         # Add the current point to the points list
         self.points.append((x, y))
+        self.all_points.append((x, y))
         if len(self.points) >= 4:
             # Remove points older than the last 4 points
             self.points = self.points[-4:]
@@ -42,6 +45,14 @@ class PencilTool(ImageProcessingTool):
     def on_mouse_up(self, x: int, y: int):
         # Clear points to end the current line
         self.points = []
+        if len(self.all_points) > 0:
+            instructions = {
+                'points': self.all_points,
+                'color': self.pencil_color,
+                'thickness': self.pencil_thickness
+            }
+            drawable_element = DrawableElement(self.__class__.__name__, instructions)
+            self.all_points = []
 
     def catmull_rom_spline(self, p0, p1, p2, p3, num_points=100):
         """
