@@ -56,11 +56,17 @@ class ImageProcessingTool:
                 self.config = config_tool
                 break
 
-    def add_drawable_element(self, drawable_element:DrawableElement):
+    def create_drawable_element(self, instructions:dict={}):
         '''
         Add a DrawableElement to the active layer
         '''
+        img_height = self.image_processor.zoomable_label.img_height
+        img_width = self.image_processor.zoomable_label.img_width
+        drawable_element = DrawableElement(self.__class__.__name__,
+                                           instructions,
+                                           (img_height, img_width))
         self.image_processor.layers[self.image_processor.active_layer_index].add_element(drawable_element)
+        return drawable_element
 
     def draw_drawable_element(self, drawable_element:DrawableElement):
         raise NotImplementedError("This method should be overridden in subclasses.")
