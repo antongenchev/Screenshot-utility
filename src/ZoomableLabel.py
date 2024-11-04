@@ -180,10 +180,13 @@ class ZoomableLabel(QLabel):
         self.offset.setX(self.offset.x() + self.scale_factor * (self.subimage_selection.left - old_subimage_selection.left))
         self.offset.setY(self.offset.y() + self.scale_factor * (self.subimage_selection.top - old_subimage_selection.top))
 
-    def update_transformed_image(self):
+    def update_transformed_image(self, image=None):
         '''
         Update self.transformed_image
         '''
+        if image is not None:
+            # Update the transformed image
+            self.transformed_image = image
         self.subimage = self.transformed_image[self.subimage_selection.top : self.subimage_selection.top + self.subimage_selection.height,
                                                self.subimage_selection.left : self.subimage_selection.left + self.subimage_selection.width]
         self.update()
