@@ -65,8 +65,7 @@ class PencilTool(ImageProcessingTool):
                 'color': self.pencil_color,
                 'thickness': self.pencil_thickness
             }
-            drawable_element = DrawableElement(self.__class__.__name__, instructions)
-            self.add_drawable_element(drawable_element)
+            self.create_drawable_element(instructions)
             self.all_points = []
 
     def catmull_rom_spline(self, p0, p1, p2, p3, num_points=100):
@@ -91,11 +90,19 @@ class PencilTool(ImageProcessingTool):
                            (-p0 + 3*p1 - 3*p2 + p3) * t**3)
             interpolated_points.append((int(point[0]), int(point[1])))
         return interpolated_points
-    
-    def draw_drawable_element(self, drawable_element:DrawableElement):
-        points = drawable_element['instructions']['points']
-        color = drawable_element['instructions']['pencil_color']
-        thickness = drawable_element['instructions']['pencil_thickness']
+
+    def draw_drawable_element(self, drawable_element:DrawableElement) -> None:
+        '''
+        Draw the drawable from the instructions.
+        Update drawable_element.image using drawable_element.instructions
+        '''
+        # Clear the image before drawing
+        drawable_element.clear_image()
+
+        # Get the instructions for drawing the DrawableElement
+        points = drawable_element.instructions['points']
+        color = drawable_element.instructions['pencil_color']
+        thickness = drawable_element.instructions['pencil_thickness']
 
         # Draw the first point
         if len(points) >= 1:
