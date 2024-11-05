@@ -30,7 +30,7 @@ class ImageProcessor(QWidget):
         self.zoomable_label:ZoomableLabel
         self.current_tool = None
         self.tool_classes = {}
-        self.layers = [] # All the layers
+        self.layers:List[Layer] = [] # All the layers
         self.fake_layer = None # layer for visualising stuff not part of what is drawn
         self.active_layer_index = 0 # the index of the active layer
         self.initUI()
@@ -161,3 +161,23 @@ class ImageProcessor(QWidget):
 
     def add_element(self, drawable_element:DrawableElement):
         self.layers[self.active_layer_index].add_element(drawable_element)
+
+    def overlay_element_on_image(self, image:np.ndarray, drawable_element:DrawableElement):
+        '''
+        Modify an image by overlaying a drawable_element on top of it. Take into account opacity
+
+        Parameters:
+            image: an opencv image
+            drawable_element: A drawable element that has already been rendered.
+                It can have offset (TODO)
+        '''
+        overlay_rgb = drawable_element.image[:, :, :3] # RGB channels of the drawable element
+        overlay_alpha = drawable_element.image[:, :, 3] / 255.0 # The alpha channel
+
+        # Inver the alpha channel for the background's contribution
+        image_alpha = 1.0 - overlay_alpha
+
+        # For each color channel, calculate the result by blending background and overlay
+        for c in range(3): # Loop over the RGB channels
+            image[:, :, c] = (overlay_rgb[:, :, c] * overlay_alpha +
+                                   image[:, :, c] * image_alpha).astype(np.uint8)
