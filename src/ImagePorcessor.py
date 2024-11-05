@@ -147,14 +147,17 @@ class ImageProcessor(QWidget):
         '''
         layer = self.layers[index]
         for drawable_element in layer.elements:
-            self.render_element(self, drawable_element)
+            self.render_element(self, drawable_element, redraw=False)
             # add element to layer
 
     ###################
     # Element methods #
     ###################
 
-    def render_element(self, drawable_element:DrawableElement):
+    def render_element(self, drawable_element:DrawableElement, redraw:bool) -> None:
+        if redraw and drawable_element.image is not None:
+            # Do not redraw if the image is already drawn
+            return
         tool_name = drawable_element.tool
         tool_obj = self.tool_classes[tool_name]['object']
         tool_obj.draw_drawable_element(drawable_element)

@@ -15,7 +15,7 @@ class Layer:
 
     def add_element(self, element:DrawableElement):
         self.elements.append(element) # add the drawable element
-        self.image_processor.render_element(element) # render the drawable element
+        self.image_processor.render_element(element, redraw=False) # render the drawable element
         self.image_processor.overlay_element_on_image(self.final_image, element)
 
     def remove_element(self, index):
