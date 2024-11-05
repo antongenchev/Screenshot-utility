@@ -103,6 +103,9 @@ class PencilTool(ImageProcessingTool):
         points = drawable_element.instructions['points']
         color = drawable_element.instructions['color']
         thickness = drawable_element.instructions['thickness']
+        opacity = 1 # hardcoded for now
+
+        alpha_value = opacity * 255 # convert the opacity to an alpha value
 
         # Draw the first point
         if len(points) >= 1:
@@ -111,6 +114,8 @@ class PencilTool(ImageProcessingTool):
                        radius = 0,
                        color=color,
                        thickness=thickness)
+            # Set the alpha channel
+            drawable_element.image[points[0][1], points[0][0], 3] = alpha_value
         # Draw the line between the 1st and 2nd point
         if len(points) >= 2:
             cv2.line(drawable_element.image,
@@ -118,14 +123,22 @@ class PencilTool(ImageProcessingTool):
                      points[1],
                      color=color,
                      thickness=thickness)
+            # Set the alpha channel
+            mask = np.zeros(drawable_element.image.shape[:2], dtype=np.uint8)
+            cv2.line(mask, points[0], points[1], color=255, thickness=thickness) # Mask where the line was drawn
+            drawable_element.image[mask == 255, 3] = alpha_value
         # Draw the rest of the interpolated points/lines
         for i in range(1, len(points) - 3):
             # draw the between points i and i+1
             spline_points = self.catmull_rom_spline(*points[i-1: i+3]) # calculate the spline points
             # Draw lines between the interpolated points
-            for i in range(len(spline_points) - 1):
+            for j in range(len(spline_points) - 1):
                 cv2.line(drawable_element.image,
-                         spline_points[i],
-                         spline_points[i + 1],
+                         spline_points[j],
+                         spline_points[j + 1],
                          color=self.pencil_color,
-                         thickness=self.pencil_thickness)
+                         thickness=thickness)
+                # Set the alpha channel
+                mask = np.zeros(drawable_element.image.shape[:2], dtype=np.uint8)
+                cv2.line(mask, spline_points[j], spline_points[j + 1], color=255, thickness=thickness)
+                drawable_element.image[mask == 255, 3] = alpha_value
