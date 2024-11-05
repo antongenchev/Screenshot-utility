@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 from enum import IntEnum, auto
 import importlib
+import copy
 from typing import List
 from scipy.interpolate import CubicSpline
 from src.ZoomableLabel import ZoomableLabel
@@ -62,6 +63,10 @@ class ImageProcessor(QWidget):
     def set_tool(self, tool: ImageProcessingTool):
         self.current_tool = tool
 
+    ##################
+    # Handle signals #
+    ##################
+
     def on_mouse_move(self, x:int, y:int):
         '''
         Handle signals from the ZoomableLabel.
@@ -91,6 +96,18 @@ class ImageProcessor(QWidget):
             y - the y coordinate of the event on the image
         '''
         self.current_tool.on_mouse_up(x, y)
+
+    def on_new_image(self):
+        '''
+        Handle signals from the ZoomableLable about a new image
+        '''
+        self.layers = []
+        image = copy.deepcopy(self.zoomable_label.original_image)
+        # Add an alpha channel in case there isn't already one
+        if image.shape[2] == 3:
+            alpha_channel = np.full((image.shape[0], image.shape[1], 1), 255, dtype=np.uint8)
+            image = np.concatenate((image, alpha_channel), axis=2)
+        self.layers.append(Layer(self, image))
 
     #################
     # Layer methods #
