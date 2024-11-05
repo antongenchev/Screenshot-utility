@@ -13,7 +13,7 @@ class DrawableElement():
         self.visible = None # bool
         self.instructions = instructions # The instructions used by the Tool to draw the element
         self.image = None # Image with the drawn element
-        self.size = None # The size of the image. Tuple[int, int] (x,y)
+        self.size = size # The size of the image. Tuple[int, int] (x,y)
         self.offset = (0, 0) # The offset to apply before adding self.image to the layer's image
 
     def clear_image(self):

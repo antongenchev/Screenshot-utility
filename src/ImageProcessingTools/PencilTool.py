@@ -101,8 +101,8 @@ class PencilTool(ImageProcessingTool):
 
         # Get the instructions for drawing the DrawableElement
         points = drawable_element.instructions['points']
-        color = drawable_element.instructions['pencil_color']
-        thickness = drawable_element.instructions['pencil_thickness']
+        color = drawable_element.instructions['color']
+        thickness = drawable_element.instructions['thickness']
 
         # Draw the first point
         if len(points) >= 1:
@@ -121,7 +121,7 @@ class PencilTool(ImageProcessingTool):
         # Draw the rest of the interpolated points/lines
         for i in range(1, len(points) - 3):
             # draw the between points i and i+1
-            spline_points = self.catmull_rom_spline(points[i-1: i+3]) # calculate the spline points
+            spline_points = self.catmull_rom_spline(*points[i-1: i+3]) # calculate the spline points
             # Draw lines between the interpolated points
             for i in range(len(spline_points) - 1):
                 cv2.line(drawable_element.image,

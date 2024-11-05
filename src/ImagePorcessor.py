@@ -92,6 +92,10 @@ class ImageProcessor(QWidget):
         '''
         self.current_tool.on_mouse_up(x, y)
 
+    #################
+    # Layer methods #
+    #################
+
     def add_layer(self, image=None):
         layer = Layer(image=image)
         self.layers.append(layer)
@@ -129,6 +133,14 @@ class ImageProcessor(QWidget):
             self.render_element(self, drawable_element)
             # add element to layer
 
+    ###################
+    # Element methods #
+    ###################
+
     def render_element(self, drawable_element:DrawableElement):
         tool_name = drawable_element.tool
-        
+        tool_obj = self.tool_classes[tool_name]['object']
+        tool_obj.draw_drawable_element(drawable_element)
+
+    def add_element(self, drawable_element:DrawableElement):
+        self.layers[self.active_layer_index].add_element(drawable_element)
