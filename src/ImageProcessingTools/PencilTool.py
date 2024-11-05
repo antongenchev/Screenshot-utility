@@ -94,7 +94,9 @@ class PencilTool(ImageProcessingTool):
     def draw_drawable_element(self, drawable_element:DrawableElement) -> None:
         '''
         Draw the drawable from the instructions.
-        Update drawable_element.image using drawable_element.instructions
+        Update drawable_element.image using drawable_element.instructions.
+        Note: The pencil first draws white on a cleared image. Then the white areas are 
+        made non transparent and with the right color
         '''
         # Clear the image before drawing
         drawable_element.clear_image()
@@ -112,21 +114,15 @@ class PencilTool(ImageProcessingTool):
             cv2.circle(drawable_element.image,
                        (points[0]),
                        radius = 0,
-                       color=color,
+                       color=(255, 255, 255),
                        thickness=thickness)
-            # Set the alpha channel
-            drawable_element.image[points[0][1], points[0][0], 3] = alpha_value
         # Draw the line between the 1st and 2nd point
         if len(points) >= 2:
             cv2.line(drawable_element.image,
                      points[0],
                      points[1],
-                     color=color,
+                     color=(255, 255, 255),
                      thickness=thickness)
-            # Set the alpha channel
-            mask = np.zeros(drawable_element.image.shape[:2], dtype=np.uint8)
-            cv2.line(mask, points[0], points[1], color=255, thickness=thickness) # Mask where the line was drawn
-            drawable_element.image[mask == 255, 3] = alpha_value
         # Draw the rest of the interpolated points/lines
         for i in range(1, len(points) - 3):
             # draw the between points i and i+1
@@ -136,9 +132,14 @@ class PencilTool(ImageProcessingTool):
                 cv2.line(drawable_element.image,
                          spline_points[j],
                          spline_points[j + 1],
-                         color=self.pencil_color,
+                         color=(255, 255, 255),
                          thickness=thickness)
-                # Set the alpha channel
-                mask = np.zeros(drawable_element.image.shape[:2], dtype=np.uint8)
-                cv2.line(mask, spline_points[j], spline_points[j + 1], color=255, thickness=thickness)
-                drawable_element.image[mask == 255, 3] = alpha_value
+        # Create a mask for the white areas
+        mask = cv2.inRange(drawable_element.image[:, :, :3], (255, 255, 255), (255, 255, 255))
+        # Change white areas to the specified color with opacity
+        for c in range(3): # Loop over the RGB channels
+            drawable_element.image[:, :, c] = np.where(mask == 255,
+                                                    color[c],
+                                                    drawable_element.image[:, :, c])
+        # Set the alpha channel for the white areas to the desired opacity
+        drawable_element.image[mask == 255, 3] = alpha_value
