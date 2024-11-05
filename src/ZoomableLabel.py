@@ -13,6 +13,9 @@ class ZoomableLabel(QLabel):
     start_draw_signal = pyqtSignal(int, int)
     stop_draw_signal = pyqtSignal(int, int)
 
+    # Signal that the original image has been changed to the ImageProcessor
+    new_image_signal = pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.original_image = None
@@ -52,6 +55,10 @@ class ZoomableLabel(QLabel):
         self.transformed_image = self.original_image
         self.subimage = self.transformed_image
         self.subimage_selection = Box(0, 0, self.img_width, self.img_height)
+
+        # Notify the ImageProcessor of the new Image
+        self.new_image_signal.emit()
+
         self.update() # Update the label to repaint with the new image
 
     def wheelEvent(self, event):
