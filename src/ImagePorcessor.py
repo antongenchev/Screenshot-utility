@@ -33,6 +33,7 @@ class ImageProcessor(QWidget):
         self.layers:List[Layer] = [] # All the layers
         self.fake_layer = None # layer for visualising stuff not part of what is drawn
         self.active_layer_index = 0 # the index of the active layer
+        self.final_image = None # The final image after adding all the layers together
         self.initUI()
 
     def initUI(self):
@@ -47,6 +48,16 @@ class ImageProcessor(QWidget):
             layout.addWidget(tool_widget)
 
         self.setLayout(layout)
+
+    def update_zoomable_label(self):
+        '''
+        Update the image shown in the zoomable label
+        '''
+        self.zoomable_label.update_transformed_image(self.final_image)
+
+    ################
+    # Handle tools #
+    ################
 
     def load_tools_from_config(self):
         for tool in config['tools']:
@@ -101,13 +112,15 @@ class ImageProcessor(QWidget):
         '''
         Handle signals from the ZoomableLable about a new image
         '''
-        self.layers = []
+        self.layers = [] # clear the previous layers
         image = copy.deepcopy(self.zoomable_label.original_image)
         # Add an alpha channel in case there isn't already one
         if image.shape[2] == 3:
             alpha_channel = np.full((image.shape[0], image.shape[1], 1), 255, dtype=np.uint8)
             image = np.concatenate((image, alpha_channel), axis=2)
+        # Add a layer with the image and set the active layer index
         self.layers.append(Layer(self, image))
+        self.active_layer_index = 0
 
     #################
     # Layer methods #

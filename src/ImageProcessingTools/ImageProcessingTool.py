@@ -1,3 +1,4 @@
+import numpy as np
 from src.DrawableElement import DrawableElement
 
 class ImageProcessingTool:
@@ -56,7 +57,7 @@ class ImageProcessingTool:
                 self.config = config_tool
                 break
 
-    def create_drawable_element(self, instructions:dict={}):
+    def create_drawable_element(self, instructions:dict={}, image:np.ndarray=None):
         '''
         Add a DrawableElement to the active layer
         '''
