@@ -60,6 +60,11 @@ class ImageProcessingTool:
     def create_drawable_element(self, instructions:dict={}, image:np.ndarray=None):
         '''
         Add a DrawableElement to the active layer
+
+        Parameters:
+            instructions: a dictionary with instructions which ImageProcessingTool.draw_drawable_element()
+                can use to draw the drawable element
+            image: image for the drawable element. If it is not provided it will be drawn by the tool
         '''
         img_height = self.image_processor.zoomable_label.img_height
         img_width = self.image_processor.zoomable_label.img_width

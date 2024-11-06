@@ -149,7 +149,10 @@ class ZoomableLabel(QLabel):
         # Convert OpenCV image to QImage
         height, width, channel = self.subimage.shape
         bytes_per_line = channel * width
-        q_image = QImage(self.subimage.data.tobytes(), width, height, bytes_per_line, QImage.Format_RGB888)
+        if channel == 3:
+            q_image = QImage(self.subimage.data.tobytes(), width, height, bytes_per_line, QImage.Format_RGB888)
+        else:
+            q_image = QImage(self.subimage.data.tobytes(), width, height, bytes_per_line, QImage.Format_RGBA8888)
 
         # Draw the scaled and translated image
         painter = QPainter(self)

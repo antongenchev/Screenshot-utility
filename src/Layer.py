@@ -14,6 +14,13 @@ class Layer:
         self.visible = not self.visible
 
     def add_element(self, element:DrawableElement):
+        '''
+        Add a new element to the layer. Put it at the top of the layer.
+        Update the final image of the layer
+
+        Parameters:
+            element: the drawable element to be added
+        '''
         self.elements.append(element) # add the drawable element
         self.image_processor.render_element(element, redraw=False) # render the drawable element
         self.image_processor.overlay_element_on_image(self.final_image, element)
@@ -24,7 +31,7 @@ class Layer:
 
     def get_elements(self:DrawableElement):
         return self.elements
-    
+
     def render_layer(self, layer):
         '''
         Update self.image

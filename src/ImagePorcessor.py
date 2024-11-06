@@ -176,7 +176,11 @@ class ImageProcessor(QWidget):
         tool_obj.draw_drawable_element(drawable_element)
 
     def add_element(self, drawable_element:DrawableElement):
+        # Add the element to the current layer
         self.layers[self.active_layer_index].add_element(drawable_element)
+        # Add the layers together to get the final image
+        self.final_image = self.layers[self.active_layer_index].final_image # TODO implement multiple layers logic
+        self.update_zoomable_label()
 
     def overlay_element_on_image(self, image:np.ndarray, drawable_element:DrawableElement):
         '''
