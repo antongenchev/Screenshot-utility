@@ -96,7 +96,8 @@ class PencilTool(ImageProcessingTool):
                 'color': self.pencil_color,
                 'thickness': self.pencil_thickness
             }
-            self.create_drawable_element(instructions)
+            self.create_drawable_element(instructions, self.image_processor.fake_layer.final_layer)
+            self.image_processor.fake_layer.clear_final_image()
 
     def catmull_rom_spline(self, p0, p1, p2, p3, num_points=100):
         """

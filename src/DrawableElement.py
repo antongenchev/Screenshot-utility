@@ -6,13 +6,14 @@ class DrawableElement():
     def __init__(self,
                  tool_name:str,
                  instructions:dict={},
+                 image:np.ndarray=None,
                  size:Tuple[int,int]=None):
         self.id = None # Unique id for the drawable element
         self.tool = tool_name # The tool which has created the drawable element
         self.z_index = None # The z-index of the element
         self.visible = None # bool
         self.instructions = instructions # The instructions used by the Tool to draw the element
-        self.image = None # Image with the drawn element
+        self.image = image # Image with the drawn element
         self.size = size # The size of the image. Tuple[int, int] (h,w)
         self.offset = (0, 0) # The offset to apply before adding self.image to the layer's image
 

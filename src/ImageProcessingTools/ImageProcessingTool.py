@@ -70,7 +70,7 @@ class ImageProcessingTool:
         img_width = self.image_processor.zoomable_label.img_width
         drawable_element = DrawableElement(self.__class__.__name__,
                                            instructions,
-                                           (img_height, img_width))
+                                           size=(img_height, img_width))
         self.image_processor.add_element(drawable_element)
         return drawable_element
 
