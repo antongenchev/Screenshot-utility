@@ -13,6 +13,7 @@ class PencilTool(ImageProcessingTool):
         self.all_points = [] # store all the points
         self.pencil_color = self.config['options']['pencil_color']
         self.pencil_thickness = self.config['options']['pencil_thickness']
+        self.pencil_alpha = 150
 
     def create_ui(self):
         """Create the button for the pencil tool."""
@@ -21,44 +22,73 @@ class PencilTool(ImageProcessingTool):
         return self.button
 
     def on_mouse_down(self, x: int, y: int):
-        self.points = [(x, y)]
-        cv2.circle(self.image_processor.zoomable_label.transformed_image,
+        '''
+        Handle mouse down events. Draw a dot
+
+        Parameters:
+            x - the x-coordinate in the image
+            y - the y-coordinate in the image
+        '''
+        self.all_points = [(x, y)]
+        # Draw a white dot
+        cv2.circle(self.image_processor.fake_layer.final_image,
                    (x, y),
                    radius = 0,
-                   color=self.pencil_color,
+                   color=(255, 255, 255), # white - a mask will be applied to change it
                    thickness=self.pencil_thickness)
-        self.image_processor.zoomable_label.update_transformed_image()
+        # Create a mask for the white area
+        mask = cv2.inRange(self.image_processor.fake_layer.final_image[:, :, :3], (255, 255, 255), (255, 255, 255))
+        # Change white areas to the specified color with opacity
+        for c in range(3): # Loop over the RGB channels
+            self.image_processor.fake_layer.final_image[:, :, c] = np.where(mask == 255,
+                                                    self.pencil_color[c],
+                                                    self.image_processor.fake_layer.final_image[:, :, c])
+        self.image_processor.fake_layer.final_image[mask == 255, 3] = self.pencil_alpha
+        # Update the zoomable label
+        self.image_processor.update_zoomable_label()
 
     def on_mouse_move(self, x: int, y: int):
+        '''
+        Draw a curve (if points are more than 4), line (points are 2), or nothing (3 points)
+
+        Parameters:
+            x - the x-coordinate in the image
+            y - the y-coordinate in the image
+        '''
         # Add the current point to the points list
-        self.points.append((x, y))
         self.all_points.append((x, y))
-        if len(self.points) >= 4:
-            # Remove points older than the last 4 points
-            self.points = self.points[-4:]
+        if len(self.all_points) >= 4:
             # Calculate the spline points
-            spline_points = self.catmull_rom_spline(*self.points)
+            spline_points = self.catmull_rom_spline(*self.all_points[-4:])
             # Draw lines between the interpolated points
             for i in range(len(spline_points) - 1):
-                cv2.line(self.image_processor.zoomable_label.transformed_image,
+                cv2.line(self.image_processor.fake_layer.final_image,
                          spline_points[i],
                          spline_points[i + 1],
-                         color=self.pencil_color,
+                         color=(255, 255, 255), # white - a mask will be applied to change it
                          thickness=self.pencil_thickness)
-            # Update the ZoomableLabel with the modified image
-            self.image_processor.zoomable_label.update_transformed_image()
-        elif len(self.points) == 2:
+        elif len(self.all_points) == 2:
             # Draw a line between the first 2 points
-            cv2.line(self.image_processor.zoomable_label.transformed_image,
-                     self.points[0],
-                     self.points[1],
-                     color=self.pencil_color,
+            cv2.line(self.image_processor.fake_layer.final_image,
+                     self.all_points[0],
+                     self.all_points[1],
+                     color=(255, 255, 255),
                      thickness=self.pencil_thickness)
-            self.image_processor.zoomable_label.update_transformed_image()
+        # Update the zoomable label
+        if len(self.all_points) != 3:
+            # Create a mask for the white area
+            mask = cv2.inRange(self.image_processor.fake_layer.final_image[:, :, :3], (255, 255, 255), (255, 255, 255))
+            # Change white areas to the specified color with opacity
+            for c in range(3): # Loop over the RGB channels
+                self.image_processor.fake_layer.final_image[:, :, c] = np.where(mask == 255,
+                                                        self.pencil_color[c],
+                                                        self.image_processor.fake_layer.final_image[:, :, c])
+            self.image_processor.fake_layer.final_image[mask == 255, 3] = self.pencil_alpha
+            self.image_processor.update_zoomable_label()
 
     def on_mouse_up(self, x: int, y: int):
         # Clear points to end the current line
-        self.points = []
+        self.all_points = []
         if len(self.all_points) > 0:
             instructions = {
                 'points': self.all_points,
@@ -66,7 +96,6 @@ class PencilTool(ImageProcessingTool):
                 'thickness': self.pencil_thickness
             }
             self.create_drawable_element(instructions)
-            self.all_points = []
 
     def catmull_rom_spline(self, p0, p1, p2, p3, num_points=100):
         """
