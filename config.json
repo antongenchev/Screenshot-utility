@@ -32,9 +32,14 @@
             "name": "PencilTool",
             "order": 1,
             "options": {
-                "pencil_color": [0, 0, 0],
-                "pencil_thickness": 1
+                "pencil_color": [0, 255, 0],
+                "pencil_thickness": 10,
+                "pencil_opacity": 0.75
             }
+        },
+        {
+            "name": "MoveTool",
+            "order": 2
         }
     ]
 }

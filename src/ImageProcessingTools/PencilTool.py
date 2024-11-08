@@ -13,7 +13,8 @@ class PencilTool(ImageProcessingTool):
         self.all_points = [] # store all the points
         self.pencil_color = self.config['options']['pencil_color']
         self.pencil_thickness = self.config['options']['pencil_thickness']
-        self.pencil_alpha = 150
+        self.pencil_opacity = self.config['options']['pencil_opacity'] # in range 0-1
+        self.pencil_alpha = self.pencil_opacity * 255
 
     def create_ui(self):
         """Create the button for the pencil tool."""
