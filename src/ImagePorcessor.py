@@ -55,7 +55,7 @@ class ImageProcessor(QWidget):
         '''
         if self.fake_layer.visible:
             # If the fake layer is visible draw it on top
-            final_image = self.overlay_images(self.final_image, self.fake_layer.image)
+            final_image = self.overlay_images(self.final_image, self.fake_layer.final_image)
             self.zoomable_label.update_transformed_image(final_image)
         else:
             # If the fake layer is not visible display just the final image
@@ -200,7 +200,7 @@ class ImageProcessor(QWidget):
     ###################
 
     def render_element(self, drawable_element:DrawableElement, redraw:bool) -> None:
-        if redraw and drawable_element.image is not None:
+        if (not redraw) and drawable_element.image is not None:
             # Do not redraw if the image is already drawn
             return
         tool_name = drawable_element.tool

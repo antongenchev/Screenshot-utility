@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QPushButton
 import cv2
 import numpy as np
 from functools import partial
+import copy
 from typing import List, Tuple
 from src.DrawableElement import DrawableElement
 
@@ -88,16 +89,18 @@ class PencilTool(ImageProcessingTool):
             self.image_processor.update_zoomable_label()
 
     def on_mouse_up(self, x: int, y: int):
-        # Clear points to end the current line
-        self.all_points = []
         if len(self.all_points) > 0:
             instructions = {
                 'points': self.all_points,
                 'color': self.pencil_color,
-                'thickness': self.pencil_thickness
+                'thickness': self.pencil_thickness,
+                'alpha': self.pencil_alpha
             }
-            self.create_drawable_element(instructions, self.image_processor.fake_layer.final_layer)
+            drawable_element_image = copy.deepcopy(self.image_processor.fake_layer.final_image)
             self.image_processor.fake_layer.clear_final_image()
+            self.create_drawable_element(instructions, drawable_element_image)
+        # Clear points to end the current line
+        self.all_points = []
 
     def catmull_rom_spline(self, p0, p1, p2, p3, num_points=100):
         """
@@ -136,9 +139,7 @@ class PencilTool(ImageProcessingTool):
         points = drawable_element.instructions['points']
         color = drawable_element.instructions['color']
         thickness = drawable_element.instructions['thickness']
-        opacity = 1 # hardcoded for now
-
-        alpha_value = opacity * 255 # convert the opacity to an alpha value
+        alpha_value = drawable_element.instructions['alpha'] * 255
 
         # Draw the first point
         if len(points) >= 1:
