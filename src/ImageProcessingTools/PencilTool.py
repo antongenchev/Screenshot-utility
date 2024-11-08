@@ -1,5 +1,6 @@
 from src.ImageProcessingTools.ImageProcessingTool import ImageProcessingTool
-from PyQt5.QtWidgets import QPushButton
+from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QSlider, QLabel, QWidget, QColorDialog
+from PyQt5.QtCore import Qt
 import cv2
 import numpy as np
 from functools import partial
@@ -175,3 +176,48 @@ class PencilTool(ImageProcessingTool):
                                                     drawable_element.image[:, :, c])
         # Set the alpha channel for the white areas to the desired opacity
         drawable_element.image[mask == 255, 3] = alpha_value
+
+    def create_settings_ui(self):
+        settings_widget = QWidget()
+        layout = QVBoxLayout()
+
+        # Pencil Thickness Slider
+        pencil_thickness_label = QLabel("Pencil Size")
+        pencil_thickness_slider = QSlider(Qt.Horizontal)
+        pencil_thickness_slider.setMinimum(1)
+        pencil_thickness_slider.setMaximum(50)
+        pencil_thickness_slider.setValue(self.pencil_thickness)
+        pencil_thickness_slider.valueChanged.connect(self.set_pencil_thickness)
+        layout.addWidget(pencil_thickness_label)
+        layout.addWidget(pencil_thickness_slider)
+
+        # Opacity Slider
+        opacity_label = QLabel("Opacity %")
+        opacity_slider = QSlider(Qt.Horizontal)
+        opacity_slider.setMinimum(0)
+        opacity_slider.setMaximum(100)  # Set the range to 0 - 100 for better precision
+        opacity_slider.setValue(int(self.pencil_opacity * 100))  # Scale initial opacity to slider range
+        opacity_slider.valueChanged.connect(self.set_opacity)
+        layout.addWidget(opacity_label)
+        layout.addWidget(opacity_slider)
+
+        # Color Picker Button
+        color_picker_button = QPushButton("Select Pencil Color")
+        color_picker_button.clicked.connect(self.open_color_picker)
+        layout.addWidget(color_picker_button)
+
+        settings_widget.setLayout(layout)
+        return settings_widget
+
+    def set_pencil_thickness(self, value):
+        self.pencil_thickness = value
+
+    def set_opacity(self, value):
+        self.pencil_opacity = value / 100
+        self.pencil_alpha = self.pencil_opacity * 255
+
+    def open_color_picker(self):
+        color = QColorDialog.getColor()
+        if color.isValid():  # Check if a valid color is selected
+            # Update the pencil color to the selected color in RGB format
+            self.pencil_color = (color.red(), color.green(), color.blue())
