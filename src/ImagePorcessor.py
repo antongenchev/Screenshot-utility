@@ -9,7 +9,7 @@ import copy
 from typing import List
 from scipy.interpolate import CubicSpline
 from src.ZoomableLabel import ZoomableLabel
-from src.Layer import Layer
+from src.Layer import Layer, FakeLayer
 from src.DrawableElement import DrawableElement
 from src.config import config
 
@@ -31,7 +31,7 @@ class ImageProcessor(QWidget):
         self.current_tool = None
         self.tool_classes = {}
         self.layers:List[Layer] = [] # All the layers
-        self.fake_layer = None # layer for visualising stuff not part of what is drawn
+        self.fake_layer:FakeLayer = None # layer for visualising stuff not part of what is drawn
         self.active_layer_index = 0 # the index of the active layer
         self.final_image = None # The final image after adding all the layers together
         self.initUI()
@@ -129,7 +129,7 @@ class ImageProcessor(QWidget):
         self.active_layer_index = 0
         # Initialize the fake layer with a zeroed image)
         empty_image = np.zeros((image.shape[0], image.shape[1], 4), dtype=np.uint8)
-        self.fake_layer = Layer(self, image=empty_image)
+        self.fake_layer = FakeLayer(self, image=empty_image)
         # Initialise the final image
         self.final_image = copy.deepcopy(image)
 

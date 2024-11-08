@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 from src.DrawableElement import DrawableElement
 
 class Layer:
@@ -37,3 +38,15 @@ class Layer:
         Update self.image
         '''
         pass
+
+class FakeLayer(Layer):
+    def __init__(self, image_processor, image=None, visible=True):
+        super().__init__(image_processor, image, visible)
+
+    def clear_final_image(self) -> None:
+        '''
+        Clears just the final_image of the layer. This is used when we have drawn
+        directly to the final_image without modifying the actual contents of the layer
+        '''
+        self.final_image = np.zeros_like(self.final_image)
+
