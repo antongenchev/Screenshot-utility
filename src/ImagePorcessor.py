@@ -53,7 +53,13 @@ class ImageProcessor(QWidget):
         '''
         Update the image shown in the zoomable label
         '''
-        self.zoomable_label.update_transformed_image(self.final_image)
+        if self.fake_layer.visible:
+            # If the fake layer is visible draw it on top
+            final_image = self.overlay_images(self.final_image, self.fake_layer.image)
+            self.zoomable_label.update_transformed_image(final_image)
+        else:
+            # If the fake layer is not visible display just the final image
+            self.zoomable_label.update_transformed_image(self.final_image)
 
     ################
     # Handle tools #
@@ -121,6 +127,11 @@ class ImageProcessor(QWidget):
         # Add a layer with the image and set the active layer index
         self.layers.append(Layer(self, image))
         self.active_layer_index = 0
+        # Initialize the fake layer with a zeroed image)
+        empty_image = np.zeros((image.shape[0], image.shape[1], 4), dtype=np.uint8)
+        self.fake_layer = Layer(self, image=empty_image)
+        # Initialise the final image
+        self.final_image = copy.deepcopy(image)
 
     #################
     # Layer methods #
@@ -162,6 +173,27 @@ class ImageProcessor(QWidget):
         for drawable_element in layer.elements:
             self.render_element(self, drawable_element, redraw=False)
             # add element to layer
+
+    def overlay_images(self, image_bottom:np.ndarray, image_top:np.ndarray) -> np.ndarray:
+        '''
+        Overlay two images and return the result
+
+        Parameters:
+            image_bottom: the image on the bottom. cv2 image with 4 channels
+            image_top: the image on the top. cv2 image with 4 channels
+        Returns:
+            cv2 image with 4 channels. The result of placing image_top on top of image_bottom
+        '''
+        bottom_alpha = image_bottom[:, :, 3] / 255.0
+        overlay_rgb = image_top[:, :, :3]
+        overlay_alpha = image_top[:, :, 3] / 255.0
+        image_result = np.zeros_like(image_bottom)
+        for c in range(3): # Loop over the RGB channels
+            image_result[:, :, c] = (overlay_rgb[:, :, c] * overlay_alpha +
+                                   image_bottom[:, :, c] * (1 - overlay_alpha)).astype(np.uint8)
+        # Compute the final alpha channel
+        image_result[:, :, 3] = ((overlay_alpha + bottom_alpha * (1.0 - overlay_alpha)) * 255).astype(np.uint8)
+        return image_result
 
     ###################
     # Element methods #
