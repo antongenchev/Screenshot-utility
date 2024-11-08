@@ -13,6 +13,7 @@ from src.Layer import Layer, FakeLayer
 from src.DrawableElement import DrawableElement
 from src.config import config
 
+from src.ImageProcessingToolSetting import ImageProcessingToolSetting
 # Import ImageProcessingTools
 from src.ImageProcessingTools.ImageProcessingTool import ImageProcessingTool
 from src.ImageProcessingTools.PencilTool import PencilTool
@@ -24,16 +25,20 @@ class ImageProcessor(QWidget):
         move = 0
         pencil = auto()
 
-    def __init__(self, zoomable_label):
+    def __init__(self,
+                 zoomable_label:ZoomableLabel,
+                 image_processing_tool_setting:ImageProcessingToolSetting):
         super().__init__()
         self.zoomable_label = zoomable_label
-        self.zoomable_label:ZoomableLabel
         self.current_tool = None
         self.tool_classes = {}
         self.layers:List[Layer] = [] # All the layers
         self.fake_layer:FakeLayer = None # layer for visualising stuff not part of what is drawn
         self.active_layer_index = 0 # the index of the active layer
         self.final_image = None # The final image after adding all the layers together
+
+        self.image_processing_tool_setting = image_processing_tool_setting
+
         self.initUI()
 
     def initUI(self):
@@ -79,6 +84,9 @@ class ImageProcessor(QWidget):
 
     def set_tool(self, tool: ImageProcessingTool):
         self.current_tool = tool
+
+        settings_ui = self.current_tool.create_settings_ui()
+        self.image_processing_tool_setting.set_tool_settings_ui(settings_ui)
 
     ##################
     # Handle signals #

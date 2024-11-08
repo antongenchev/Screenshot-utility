@@ -4,6 +4,7 @@ from PyQt5.QtGui import QPixmap, QImage
 from src.TransparentWindow import TransparentWindow
 from src.ZoomableLabel import ZoomableLabel
 from src.ImagePorcessor import ImageProcessor
+from src.ImageProcessingToolSetting import ImageProcessingToolSetting
 from mss import mss
 import cv2
 import numpy as np
@@ -16,8 +17,8 @@ class ScreenshotApp(QWidget):
         super().__init__()
         self.screenshot_image = None
         self.screenshot_label = ZoomableLabel(self)
-        self.image_processor = ImageProcessor(self.screenshot_label)
-        self.layer_list = LayerList(self.image_processor)
+        self.tool_settings_widget = ImageProcessingToolSetting()
+        self.image_processor = ImageProcessor(self.screenshot_label ,self.tool_settings_widget)
 
         self.screenshot_label.draw_signal.connect(self.image_processor.on_mouse_move)
         self.screenshot_label.start_draw_signal.connect(self.image_processor.on_mouse_down)
@@ -56,6 +57,8 @@ class ScreenshotApp(QWidget):
 
         # Image Processor sublayout
         self.layout.addWidget(self.image_processor)
+
+        self.layout.addWidget(self.tool_settings_widget)
 
         # Menu for changing the screenshot selection
         grid_layout = QGridLayout()
