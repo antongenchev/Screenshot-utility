@@ -36,7 +36,7 @@ class PencilTool(ImageProcessingTool):
         '''
         self.all_points = [(x, y)]
         # Create a new mask
-        self.grayscale_mask = np.zeros(self.image_processor.fake_layer.final_image.shape[:2])
+        self.grayscale_mask = np.zeros(self.image_processor.fake_layer.final_image.shape[:2], dtype=np.uint8)
         # Draw a white dot
         cv2.circle(self.grayscale_mask,
                    (x, y),

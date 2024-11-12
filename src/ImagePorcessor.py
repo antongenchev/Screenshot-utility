@@ -241,3 +241,6 @@ class ImageProcessor(QWidget):
         for c in range(3): # Loop over the RGB channels
             image[:, :, c] = (overlay_rgb[:, :, c] * overlay_alpha +
                                    image[:, :, c] * image_alpha).astype(np.uint8)
+
+    def get_touch_element(self, x, y, r) -> DrawableElement:
+        return self.layers[self.active_layer_index].get_touched_element(x, y, r)

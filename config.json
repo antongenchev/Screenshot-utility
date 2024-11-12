@@ -40,6 +40,10 @@
         {
             "name": "MoveTool",
             "order": 2
+        },
+        {
+            "name": "SelectTool",
+            "order": 3
         }
     ]
 }

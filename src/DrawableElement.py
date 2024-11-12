@@ -38,7 +38,7 @@ class DrawableElement():
             bool: True if the element is touched, False otherwise
         '''
         # Cannot check for a touch if the element has no touchmask
-        if self.touch_mask:
+        if self.touch_mask is None:
             return False
 
         # Translate global coordinates (x, y) to local coordinates within the touch_mask      

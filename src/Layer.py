@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from typing import List
 from src.DrawableElement import DrawableElement
 
 class Layer:
@@ -9,7 +10,7 @@ class Layer:
         self.final_image = image
         self.visible = visible # Is the layer visible
         self.drawing_enabled = False
-        self.elements = []
+        self.elements:List[DrawableElement] = []
 
     def toggle_visibility(self):
         self.visible = not self.visible
@@ -38,6 +39,20 @@ class Layer:
         Update self.image
         '''
         pass
+
+    def get_touched_element(self, x:int, y:int, r:int) -> DrawableElement:
+        '''
+        Parameters:
+            x - the x coordinate
+            y - the y coordinate
+            r - the radius around (x, y)
+        Returns:
+            DrawablElement: return the topmost drawable element that was clicked.
+                If there is no such element return None
+        '''
+        for element in reversed(self.elements):
+            if element.is_touched(x, y, r):
+                return element
 
 class FakeLayer(Layer):
     def __init__(self, image_processor, image=None, visible=True):
