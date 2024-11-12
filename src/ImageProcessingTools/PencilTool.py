@@ -18,6 +18,8 @@ class PencilTool(ImageProcessingTool):
         self.pencil_opacity = self.config['options']['pencil_opacity'] # in range 0-1
         self.pencil_alpha = self.pencil_opacity * 255
 
+        self.grayscale_mask = None # a cv2 image with 1 channel. 255 => we have drawn here, 0 => we have not drawn here
+
     def create_ui(self):
         """Create the button for the pencil tool."""
         self.button = QPushButton('Draw')
@@ -33,20 +35,20 @@ class PencilTool(ImageProcessingTool):
             y - the y-coordinate in the image
         '''
         self.all_points = [(x, y)]
+        # Create a new mask
+        self.grayscale_mask = np.zeros(self.image_processor.fake_layer.final_image.shape[:2])
         # Draw a white dot
-        cv2.circle(self.image_processor.fake_layer.final_image,
+        cv2.circle(self.grayscale_mask,
                    (x, y),
                    radius = 0,
-                   color=(255, 255, 255), # white - a mask will be applied to change it
+                   color=255, # white - a mask will be applied to change it
                    thickness=self.pencil_thickness)
-        # Create a mask for the white area
-        mask = cv2.inRange(self.image_processor.fake_layer.final_image[:, :, :3], (255, 255, 255), (255, 255, 255))
         # Change white areas to the specified color with opacity
         for c in range(3): # Loop over the RGB channels
-            self.image_processor.fake_layer.final_image[:, :, c] = np.where(mask == 255,
+            self.image_processor.fake_layer.final_image[:, :, c] = np.where(self.grayscale_mask == 255,
                                                     self.pencil_color[c],
                                                     self.image_processor.fake_layer.final_image[:, :, c])
-        self.image_processor.fake_layer.final_image[mask == 255, 3] = self.pencil_alpha
+        self.image_processor.fake_layer.final_image[self.grayscale_mask == 255, 3] = self.pencil_alpha
         # Update the zoomable label
         self.image_processor.update_zoomable_label()
 
@@ -65,31 +67,36 @@ class PencilTool(ImageProcessingTool):
             spline_points = self.catmull_rom_spline(*self.all_points[-4:])
             # Draw lines between the interpolated points
             for i in range(len(spline_points) - 1):
-                cv2.line(self.image_processor.fake_layer.final_image,
+                cv2.line(self.grayscale_mask,
                          spline_points[i],
                          spline_points[i + 1],
-                         color=(255, 255, 255), # white - a mask will be applied to change it
+                         color=255, # white - a mask will be applied to change it
                          thickness=self.pencil_thickness)
         elif len(self.all_points) == 2:
             # Draw a line between the first 2 points
-            cv2.line(self.image_processor.fake_layer.final_image,
+            cv2.line(self.grayscale_mask,
                      self.all_points[0],
                      self.all_points[1],
-                     color=(255, 255, 255),
+                     color=255,
                      thickness=self.pencil_thickness)
         # Update the zoomable label
         if len(self.all_points) != 3:
-            # Create a mask for the white area
-            mask = cv2.inRange(self.image_processor.fake_layer.final_image[:, :, :3], (255, 255, 255), (255, 255, 255))
             # Change white areas to the specified color with opacity
             for c in range(3): # Loop over the RGB channels
-                self.image_processor.fake_layer.final_image[:, :, c] = np.where(mask == 255,
+                self.image_processor.fake_layer.final_image[:, :, c] = np.where(self.grayscale_mask == 255,
                                                         self.pencil_color[c],
                                                         self.image_processor.fake_layer.final_image[:, :, c])
-            self.image_processor.fake_layer.final_image[mask == 255, 3] = self.pencil_alpha
+            self.image_processor.fake_layer.final_image[self.grayscale_mask == 255, 3] = self.pencil_alpha
             self.image_processor.update_zoomable_label()
 
     def on_mouse_up(self, x: int, y: int):
+        '''
+        On a mouse release create a drawable element
+
+        Parameters:
+            x - the x-coordinate in the image
+            y - the y-coordinate in the image
+        '''
         if len(self.all_points) > 0:
             instructions = {
                 'points': self.all_points,
@@ -99,7 +106,7 @@ class PencilTool(ImageProcessingTool):
             }
             drawable_element_image = copy.deepcopy(self.image_processor.fake_layer.final_image)
             self.image_processor.fake_layer.clear_final_image()
-            self.create_drawable_element(instructions, drawable_element_image)
+            self.create_drawable_element(instructions, drawable_element_image, touch_mask=self.grayscale_mask)
         # Clear points to end the current line
         self.all_points = []
 

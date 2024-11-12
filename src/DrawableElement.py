@@ -7,13 +7,15 @@ class DrawableElement():
                  tool_name:str,
                  instructions:dict={},
                  image:np.ndarray=None,
-                 size:Tuple[int,int]=None):
+                 size:Tuple[int,int]=None,
+                 touch_mask:np.ndarray=None):
         self.id = None # Unique id for the drawable element
         self.tool = tool_name # The tool which has created the drawable element
         self.z_index = None # The z-index of the element
         self.visible = None # bool
         self.instructions = instructions # The instructions used by the Tool to draw the element
         self.image = image # Image with the drawn element
+        self.touch_mask = touch_mask # cv2 image with 1 channel with the same size as self.image
         self.size = size # The size of the image. Tuple[int, int] (h,w)
         self.offset = (0, 0) # The offset to apply before adding self.image to the layer's image
 
@@ -22,3 +24,4 @@ class DrawableElement():
             raise ValueError("Image size is not set. Set `self.size` before calling `clear_image`.")
         height, width = self.size
         self.image = np.zeros((height, width, 4), dtype=np.uint8)
+        self.touch_mask = np.zeros((height, width), dtype=np.uint8)

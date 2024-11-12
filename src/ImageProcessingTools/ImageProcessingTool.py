@@ -57,7 +57,10 @@ class ImageProcessingTool:
                 self.config = config_tool
                 break
 
-    def create_drawable_element(self, instructions:dict={}, image:np.ndarray=None):
+    def create_drawable_element(self,
+                                instructions:dict={},
+                                image:np.ndarray=None,
+                                touch_mask:np.ndarray=None):
         '''
         Add a DrawableElement to the active layer
 
@@ -65,13 +68,15 @@ class ImageProcessingTool:
             instructions: a dictionary with instructions which ImageProcessingTool.draw_drawable_element()
                 can use to draw the drawable element
             image: image for the drawable element. If it is not provided it will be drawn by the tool
+            touch_mask: a black and white image that defines where an element can be touched
         '''
         img_height = self.image_processor.zoomable_label.img_height
         img_width = self.image_processor.zoomable_label.img_width
         drawable_element = DrawableElement(self.__class__.__name__,
                                            instructions,
                                            image=image,
-                                           size=(img_height, img_width))
+                                           size=(img_height, img_width),
+                                           touch_mask=touch_mask)
         self.image_processor.add_element(drawable_element)
         return drawable_element
 
