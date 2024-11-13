@@ -229,18 +229,42 @@ class ImageProcessor(QWidget):
         Parameters:
             image: an opencv image
             drawable_element: A drawable element that has already been rendered.
-                It can have offset (TODO)
+                If the drawable element has an affine transformation it will be applied when overlayig it
         '''
-        overlay_rgb = drawable_element.image[:, :, :3] # RGB channels of the drawable element
-        overlay_alpha = drawable_element.image[:, :, 3] / 255.0 # The alpha channel
+        if drawable_element.transformation is not None:
+            # Apply the affine transformation if the drawable has such
+            transformed_element_img = cv2.warpAffine(drawable_element.image,
+                                                    drawable_element.transformation,
+                                                    (image.shape[1], image.shape[0]))
+            overlay_height, overlay_width = transformed_element_img.shape[:2]
+            # Extract the offset (tx, ty) of the affine transformation matrix
+            tx = int(drawable_element.transformation[0, 2])
+            ty = int(drawable_element.transformation[1, 2])
+            # Calculate the region of interest in the target image
+            start_x = max(tx, 0)
+            start_y = max(ty, 0)
+            end_x = min(tx + overlay_width, image.shape[1])
+            end_y = min(ty + overlay_height, image.shape[0])
+            # Calculate ROI in the transformed image
+            roi_transformed = transformed_element_img[start_y-ty:end_y-ty, start_x-tx:end_x-tx]
+        else:
+            # If no transformation, place the element at the origin
+            roi_transformed = drawable_element.image
+            start_x, start_y = 0, 0
+            end_x, end_y = image.shape[1], image.shape[0]
 
-        # Inver the alpha channel for the background's contribution
+        overlay_rgb = roi_transformed[:, :, :3] # RGB channels of the drawable element
+        overlay_alpha = roi_transformed[:, :, 3] / 255.0 # The alpha channel of the drawable element
+        # Invert the alpha channel for the background's contribution
         image_alpha = 1.0 - overlay_alpha
-
+        # Define the corresponging region in the background image
+        roi_image = image[start_y:end_y, start_x:end_x]
         # For each color channel, calculate the result by blending background and overlay
         for c in range(3): # Loop over the RGB channels
-            image[:, :, c] = (overlay_rgb[:, :, c] * overlay_alpha +
-                                   image[:, :, c] * image_alpha).astype(np.uint8)
+            roi_image[:, :, c] = (overlay_rgb[:, :, c] * overlay_alpha +
+                                 roi_image[:, :, c] * image_alpha).astype(np.uint8)
+        # Place the blended ROI back into the original image
+        image[start_y:end_y, start_x:end_x] = roi_image
 
     def get_touch_element(self, x, y, r) -> DrawableElement:
         return self.layers[self.active_layer_index].get_touched_element(x, y, r)

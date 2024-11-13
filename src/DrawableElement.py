@@ -14,6 +14,7 @@ class DrawableElement():
         self.z_index = None # The z-index of the element
         self.visible = None # bool
         self.instructions = instructions # The instructions used by the Tool to draw the element
+        self.transformation = None # A linear transformation to apply when overlaying the element
         self.image = image # Image with the drawn element
         self.touch_mask = touch_mask # cv2 image with 1 channel with the same size as self.image
         self.size = size # The size of the image. Tuple[int, int] (h,w)
