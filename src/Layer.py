@@ -1,13 +1,14 @@
 import cv2
 import numpy as np
 from typing import List
+import copy
 from src.DrawableElement import DrawableElement
 
 class Layer:
     def __init__(self, image_processor, image=None, visible=True):
         self.image_processor = image_processor
         self.image = image # The starting image on which we draw
-        self.final_image = image
+        self.final_image = copy.deepcopy(image)
         self.visible = visible # Is the layer visible
         self.drawing_enabled = False
         self.elements:List[DrawableElement] = []
@@ -27,18 +28,27 @@ class Layer:
         self.image_processor.render_element(element, redraw=False) # render the drawable element
         self.image_processor.overlay_element_on_image(self.final_image, element)
 
-    def remove_element(self, index):
+    def remove_element(self, index:int) -> None:
         if 0 <= index < len(self.elements):
             del self.elements[index]
 
-    def get_elements(self:DrawableElement):
+    def get_elements(self:DrawableElement) -> List[DrawableElement]:
         return self.elements
 
-    def render_layer(self, layer):
+    def render_layer_hard(self) -> None:
         '''
-        Update self.image
+        Rerender the whole layer by rerendering every element and adding it.
+        This method renders the layer from instructions without using any intermediate results/images to speed up
+        Note that the starting image (self.image) might already contain some drawable elements which are no longer
+        kept as elements but are drawn straight on the image
         '''
-        pass
+        # Reset the final image
+        self.final_image = copy.deepcopy(self.image)
+        for element in self.elements:
+            # Rerender every element
+            self.image_processor.render_element(element, redraw=True)
+            # Add the elements to the layer
+            self.image_processor.overlay_element_on_image(self.final_image, element)
 
     def get_touched_element(self, x:int, y:int, r:int) -> DrawableElement:
         '''
