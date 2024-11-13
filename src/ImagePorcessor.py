@@ -179,7 +179,7 @@ class ImageProcessor(QWidget):
         '''
         layer = self.layers[index]
         for drawable_element in layer.elements:
-            self.render_element(self, drawable_element, redraw=False)
+            self.render_element(drawable_element, redraw=False)
             # add element to layer
 
     def overlay_images(self, image_bottom:np.ndarray, image_top:np.ndarray) -> np.ndarray:
