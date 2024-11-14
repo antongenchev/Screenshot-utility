@@ -43,9 +43,12 @@ class DrawableElement():
         if self.touch_mask is None:
             return False
 
-        # Translate global coordinates (x, y) to local coordinates within the touch_mask      
-        local_x = x - self.offset[0]
-        local_y = y - self.offset[0]
+        # Get the inverse transformation matrix
+        inverse_transformation = self.get_inverse_transformation()
+
+        # Transform global coordinates (x, y) to local coordinates within the touch_mask
+        local_coords = inverse_transformation @ np.array([x, y, 1])
+        local_x, local_y = int(local_coords[0]), int(local_coords[1])
 
         # Check bounds to prevent out-of-range access
         if (local_x < 0 or local_y < 0 or
@@ -80,3 +83,13 @@ class DrawableElement():
                 [0, 1, 0]
             ], dtype=np.float32)
         return self.transformation
+
+    def get_inverse_transformation(self) -> np.ndarray:
+        '''
+        Get the inverse of the transformation of the DrawableElement
+        '''
+        transformation = self.get_transformation()
+        inverse_transformation_matrix = np.linalg.inv(transformation[:, :2])
+        inverse_translation = -inverse_transformation_matrix @ transformation[:, 2]
+        inverse_transformation = np.hstack([inverse_transformation_matrix, inverse_translation.reshape(-1, 1)])
+        return inverse_transformation
