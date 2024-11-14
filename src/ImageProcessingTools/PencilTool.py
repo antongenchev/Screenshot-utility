@@ -105,8 +105,23 @@ class PencilTool(ImageProcessingTool):
                 'alpha': self.pencil_alpha
             }
             drawable_element_image = copy.deepcopy(self.image_processor.fake_layer.final_image)
+            # Cut the non empty part of the image
+            non_zero_rows = np.any(self.grayscale_mask != 0, axis=1)
+            non_zero_columns = np.any(self.grayscale_mask != 0, axis=0)
+            min_y = np.argmax(non_zero_rows)
+            max_y = len(non_zero_rows) - np.argmax(non_zero_rows[::-1])
+            min_x = np.argmax(non_zero_columns)
+            max_x = len(non_zero_columns) - np.argmax(non_zero_columns[::-1])
+            cropped_image = drawable_element_image[min_y:max_y, min_x:max_x]
+            self.grayscale_mask = self.grayscale_mask[min_y:max_y, min_x:max_x]
+            transformation = np.array([[1, 0, min_x], [0, 1, min_y]], dtype=np.float32) # The affine transformation with offset
+            # Clear the fake layer
             self.image_processor.fake_layer.clear_final_image()
-            self.create_drawable_element(instructions, drawable_element_image, touch_mask=self.grayscale_mask)
+            # Create the new drawable element
+            self.create_drawable_element(instructions,
+                                         cropped_image,
+                                         touch_mask=self.grayscale_mask,
+                                         transformation=transformation)
         # Clear points to end the current line
         self.all_points = []
 

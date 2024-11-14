@@ -60,7 +60,8 @@ class ImageProcessingTool:
     def create_drawable_element(self,
                                 instructions:dict={},
                                 image:np.ndarray=None,
-                                touch_mask:np.ndarray=None):
+                                touch_mask:np.ndarray=None,
+                                transformation:np.ndarray=None):
         '''
         Add a DrawableElement to the active layer
 
@@ -76,7 +77,8 @@ class ImageProcessingTool:
                                            instructions,
                                            image=image,
                                            size=(img_height, img_width),
-                                           touch_mask=touch_mask)
+                                           touch_mask=touch_mask,
+                                           transformation=transformation)
         self.image_processor.add_element(drawable_element)
         return drawable_element
 
