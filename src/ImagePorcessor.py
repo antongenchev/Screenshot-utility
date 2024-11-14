@@ -268,7 +268,7 @@ class ImageProcessor(QWidget):
             end_x = min(tx + overlay_width, image.shape[1])
             end_y = min(ty + overlay_height, image.shape[0])
             # Calculate ROI in the transformed image
-            roi_transformed = transformed_element_img[start_y-ty:end_y-ty, start_x-tx:end_x-tx]
+            roi_transformed = transformed_element_img[start_y:end_y, start_x:end_x]
         else:
             # If no transformation, place the element at the origin
             roi_transformed = drawable_element.image
