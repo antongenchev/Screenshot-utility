@@ -260,9 +260,11 @@ class ImageProcessor(QWidget):
         # Define the corresponging region in the background image
         roi_image = image[start_y:end_y, start_x:end_x]
         # For each color channel, calculate the result by blending background and overlay
-        for c in range(3): # Loop over the RGB channels
+        for c in range(3):
             roi_image[:, :, c] = (overlay_rgb[:, :, c] * overlay_alpha +
                                  roi_image[:, :, c] * image_alpha).astype(np.uint8)
+        # Compute the final alpha channel
+        roi_image[:, :, 3] = ((overlay_alpha + (roi_image[:, :, 3] / 255) * (1.0 - overlay_alpha)) * 255).astype(np.uint8)
         # Place the blended ROI back into the original image
         image[start_y:end_y, start_x:end_x] = roi_image
 
