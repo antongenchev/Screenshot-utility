@@ -66,3 +66,16 @@ class DrawableElement():
                     if self.touch_mask[i, j] == 255:
                         return True # Touched area found
         return False
+
+    def get_transformation(self) -> np.ndarray:
+        '''
+        Get the transformation of the DrawableElement
+        Initialise the transformation of the drawable element if it is not initialised already.
+        The initialisation is with an identity matrix with 0 offset
+        '''
+        if self.transformation is None:
+            self.transformation = np.array([
+                [1, 0, 0],
+                [0, 1, 0]
+            ], dtype=np.float32)
+        return self.transformation

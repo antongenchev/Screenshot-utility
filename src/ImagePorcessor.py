@@ -167,6 +167,13 @@ class ImageProcessor(QWidget):
         '''
         Render all layers
         '''
+        self.final_image = None
+        for layer in self.layers:
+            if self.final_image is None:
+                self.final_image = layer.final_image
+                continue
+            self.final_image = self.overlay_images(self.final_image, layer.final_image)
+
         self.zoomable_label.update_transformed_image()
 
     def render_layer(self, index:int) -> None:
@@ -222,7 +229,22 @@ class ImageProcessor(QWidget):
         self.final_image = self.layers[self.active_layer_index].final_image # TODO implement multiple layers logic
         self.update_zoomable_label()
 
-    def overlay_element_on_image(self, image:np.ndarray, drawable_element:DrawableElement):
+    def apply_element_transformation(self, drawable_element:DrawableElement) -> None:
+        '''
+        This function applies the transformation of a drawable_element and redraws the layer which contains it
+
+        Parameters:
+            drawable_element: the drawable_element. It must be in the elements list of the currently
+                active layer.
+        '''
+        # Update the active layer
+        self.layers[self.active_layer_index].rerender_after_element_update(drawable_element)
+        # Add all the layers together
+
+        # Update the final image
+        self.render_layers()
+
+    def overlay_element_on_image(self, image:np.ndarray, drawable_element:DrawableElement) -> None:
         '''
         Modify an image by overlaying a drawable_element on top of it. Take into account opacity
 
