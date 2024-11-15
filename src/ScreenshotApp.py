@@ -3,6 +3,7 @@ from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtGui import QPixmap, QImage
 from src.TransparentWindow import TransparentWindow
 from src.ZoomableLabel import ZoomableLabel
+from src.ZoomableWidget import ZoomableWidget
 from src.ImagePorcessor import ImageProcessor
 from src.ImageProcessingToolSetting import ImageProcessingToolSetting
 from mss import mss
@@ -16,14 +17,14 @@ class ScreenshotApp(QWidget):
     def __init__(self):
         super().__init__()
         self.screenshot_image = None
-        self.screenshot_label = ZoomableLabel(self)
+        self.zoomable_widget = ZoomableWidget(self)
         self.tool_settings_widget = ImageProcessingToolSetting()
-        self.image_processor = ImageProcessor(self.screenshot_label ,self.tool_settings_widget)
+        self.image_processor = ImageProcessor(self.zoomable_widget.zoomable_label ,self.tool_settings_widget)
 
-        self.screenshot_label.draw_signal.connect(self.image_processor.on_mouse_move)
-        self.screenshot_label.start_draw_signal.connect(self.image_processor.on_mouse_down)
-        self.screenshot_label.stop_draw_signal.connect(self.image_processor.on_mouse_up)
-        self.screenshot_label.new_image_signal.connect(self.image_processor.on_new_image)
+        self.zoomable_widget.zoomable_label.draw_signal.connect(self.image_processor.on_mouse_move)
+        self.zoomable_widget.zoomable_label.start_draw_signal.connect(self.image_processor.on_mouse_down)
+        self.zoomable_widget.zoomable_label.stop_draw_signal.connect(self.image_processor.on_mouse_up)
+        self.zoomable_widget.zoomable_label.new_image_signal.connect(self.image_processor.on_new_image)
 
         self.initGUI()
 
@@ -51,9 +52,9 @@ class ScreenshotApp(QWidget):
         self.layout.addLayout(h_layout)
 
         # Label to display the screenshot
-        self.screenshot_label.setFixedSize(600, 400)  # Set some default size
-        self.screenshot_label.setStyleSheet("border: 1px solid black")
-        self.layout.addWidget(self.screenshot_label)
+        self.zoomable_widget.zoomable_label.setFixedSize(600, 400)  # Set some default size
+        self.zoomable_widget.zoomable_label.setStyleSheet("border: 1px solid black")
+        self.layout.addWidget(self.zoomable_widget)
 
         # Image Processor sublayout
         self.layout.addWidget(self.image_processor)
@@ -178,6 +179,6 @@ class ScreenshotApp(QWidget):
             image = self.screenshot_image[selection.top : selection.top + selection.height,
                                           selection.left : selection.left + selection.width]
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            self.screenshot_label.setImage(image)
+            self.zoomable_widget.zoomable_label.setImage(image)
         except:
             return None
