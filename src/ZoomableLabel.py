@@ -129,14 +129,16 @@ class ZoomableLabel(QLabel):
     def mouseReleaseEvent(self, event):
         if event.button() != Qt.LeftButton:
             return None
-        
+
         if self.drawing_enabled:
             # Emit a signal for the ImageProcessor
             x, y = self.convert_to_img_coor(event.pos().x(), event.pos().y())
             self.stop_draw_signal.emit(x, y)
         else:
             self.last_mouse_pos = None
-            self.mouse_pressed = False
+
+        # Update mouse_pressed
+        self.mouse_pressed = False
 
     def paintEvent(self, event):
         ''' Draw the scaled and translated image '''
