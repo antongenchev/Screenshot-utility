@@ -9,6 +9,7 @@ import copy
 from typing import List
 from scipy.interpolate import CubicSpline
 from src.ZoomableLabel import ZoomableLabel
+from src.ZoomableWidget import ZoomableWidget
 from src.Layer import Layer, FakeLayer
 from src.DrawableElement import DrawableElement
 from src.config import config
@@ -26,10 +27,11 @@ class ImageProcessor(QWidget):
         pencil = auto()
 
     def __init__(self,
-                 zoomable_label:ZoomableLabel,
+                 zoomable_widget:ZoomableWidget,
                  image_processing_tool_setting:ImageProcessingToolSetting):
         super().__init__()
-        self.zoomable_label = zoomable_label
+        self.zoomable_widget = zoomable_widget
+        self.zoomable_label = zoomable_widget.zoomable_label
         self.current_tool = None
         self.tool_classes = {}
         self.layers:List[Layer] = [] # All the layers

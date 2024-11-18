@@ -19,7 +19,7 @@ class ScreenshotApp(QWidget):
         self.screenshot_image = None
         self.zoomable_widget = ZoomableWidget(self)
         self.tool_settings_widget = ImageProcessingToolSetting()
-        self.image_processor = ImageProcessor(self.zoomable_widget.zoomable_label ,self.tool_settings_widget)
+        self.image_processor = ImageProcessor(self.zoomable_widget, self.tool_settings_widget)
 
         self.zoomable_widget.zoomable_label.draw_signal.connect(self.image_processor.on_mouse_move)
         self.zoomable_widget.zoomable_label.start_draw_signal.connect(self.image_processor.on_mouse_down)
