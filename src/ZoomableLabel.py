@@ -18,6 +18,7 @@ class ZoomableLabel(QLabel):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.zoomable_widget = parent
         self.original_image = None
         self.transformed_image = None # the original image after any image processing transformations
         self.subimage = None # part of self.transformed_image (to avoid drawing more than neccessary)
@@ -147,6 +148,9 @@ class ZoomableLabel(QLabel):
 
         # Update the subimage
         self.update_subimage()
+
+        # Update the overlay
+        self.zoomable_widget.overlay.update()
 
         # Convert OpenCV image to QImage
         height, width, channel = self.subimage.shape
