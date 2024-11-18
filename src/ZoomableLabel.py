@@ -26,6 +26,9 @@ class ZoomableLabel(QLabel):
         self.subimage_selection = None # Box(left, top, width, height)
         self.scale_factor = 1.0 # cv2_image_coordinate * scale_factor -> widget_coordinate
         self.offset = QPoint(0, 0) # offset in widget coordinates
+        self.old_scale_factor = 1.0
+        self.old_offset = QPoint(0, 0)
+        self.old_subimage_selection = None
         self.last_mouse_pos = None
         self.mouse_pressed = None
 
@@ -150,7 +153,8 @@ class ZoomableLabel(QLabel):
         self.update_subimage()
 
         # Update the overlay
-        self.zoomable_widget.overlay.update()
+        if not self.is_overlay_updated():
+            self.zoomable_widget.overlay.update()
 
         # Convert OpenCV image to QImage
         height, width, channel = self.subimage.shape
@@ -226,3 +230,18 @@ class ZoomableLabel(QLabel):
         x = int((x - self.offset.x()) / self.scale_factor) + self.subimage_selection.left
         y = int((y - self.offset.y()) / self.scale_factor) + self.subimage_selection.top
         return (x, y)
+
+    def is_overlay_updated(self) -> bool:
+        '''
+        Check if the overlay needs to be updated. If there is a scaling or adding of offset
+        that the overlay is not aware of then the overlay needs to be updated.
+        '''
+        if self.old_offset != self.offset or \
+           self.old_scale_factor != self.scale_factor or \
+           self.old_subimage_selection != self.subimage_selection:
+            self.old_offset = self.offset
+            self.old_scale_factor = self.scale_factor
+            self.old_subimage_selection = self.subimage_selection
+            return False
+        else:
+            return True
