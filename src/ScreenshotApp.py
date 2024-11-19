@@ -52,8 +52,6 @@ class ScreenshotApp(QWidget):
         self.layout.addLayout(h_layout)
 
         # Label to display the screenshot
-        self.zoomable_widget.zoomable_label.setFixedSize(600, 400)  # Set some default size
-        self.zoomable_widget.zoomable_label.setStyleSheet("border: 1px solid black")
         self.layout.addWidget(self.zoomable_widget)
 
         # Image Processor sublayout
