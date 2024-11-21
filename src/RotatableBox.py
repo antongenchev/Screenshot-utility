@@ -60,7 +60,7 @@ class RotatableBox(QWidget):
 
         self.current_action = actions.none
         # Members used for moving
-        self.drag_offset:Tuple[float, float] = None # the difference between mouse and box'stop-left
+        self.shown_drag_offset:QPoint = None # the difference between mouse and box's origin (left, top)
         # Members used for rotating
         self.initial_angle:float = None # used to calculate the angle difference
         self.final_angle:float = None # the final angle after rotating
@@ -120,12 +120,12 @@ class RotatableBox(QWidget):
             if zone_clicked == zone_areas.center:
                 # Drag the box
                 self.current_action = actions.move
-                self.drag_offset = mouse_position - QPoint(self.shown_left, self.shown_top)
+                self.shown_drag_offset = mouse_position - QPoint(self.shown_left, self.shown_top)
                 return
             elif zone_clicked == zone_areas.circle:
                 # Rotate the box
                 self.current_action = actions.rotate
-                self.shown_center_x_origina, self.shown_center_y_original = self.get_shown_center()
+                self.shown_center_x_original, self.shown_center_y_original = self.get_shown_center()
                 self.original_transformation = self.drawable_element.get_transformation()
                 self.initial_angle = self.get_angle_from_center(mouse_position)
                 return
@@ -165,9 +165,22 @@ class RotatableBox(QWidget):
         '''
         Handle the logic for moving the box
         '''
-        new_position = mouse_position - self.drag_offset
-        self.shown_left = new_position.x()
-        self.shown_top = new_position.y()
+        # Get the ZoomableLabel info
+        zoomable_label = self.zoomable_widget.zoomable_label
+        selection = zoomable_label.subimage_selection
+        offset = zoomable_label.offset
+        scale_factor = zoomable_label.scale_factor
+
+        # Calculate the new position of the center
+        new_shown_center = mouse_position - self.shown_drag_offset
+
+        # Convert the shown position into the real offset position (tx, ty)
+        tx = (new_shown_center.x() - offset.x()) / scale_factor + selection.left
+        ty = (new_shown_center.y() - offset.y()) / scale_factor + selection.top
+
+        # Redraw the widget with the new offset
+        self.drawable_element.transformation[:, 2] = [tx, ty]
+        self.image_processor.apply_element_transformation(self.drawable_element)
         self.update()
 
     def rotate_box(self, mouse_postion:QPoint) -> None:
@@ -176,9 +189,6 @@ class RotatableBox(QWidget):
         '''
         # Calculate the change in angle
         delta_angle = self.get_angle_from_center(mouse_postion) - self.initial_angle
-
-        # Update the initial angle to be the new angle
-        # self.initial_angle = self.get_angle_from_center(mouse_postion)
 
         # Extract transformation components
         transformation = self.drawable_element.transformation
@@ -355,5 +365,5 @@ class RotatableBox(QWidget):
         sin_angle = math.sin(angle_radians)
         # Use (left, top) and add a rotated version of the vector (width, height)/2
         self.shown_center_x_original = self.shown_left + cos_angle * self.shown_width / 2 - sin_angle * self.shown_height / 2
-        self.shown_center_y_original = self.shown_top + cos_angle * self.shown_width / 2 + sin_angle * self.shown_height / 2
+        self.shown_center_y_original = self.shown_top + sin_angle * self.shown_width / 2 + cos_angle * self.shown_height / 2
         return (self.shown_center_x_original, self.shown_center_y_original)
