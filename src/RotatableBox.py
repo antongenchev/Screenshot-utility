@@ -51,7 +51,7 @@ class RotatableBox(QWidget):
         self.circle_clickable_radius = 4
         self.resize_clickable_border = 4
 
-        # The 'shown_' attributes needed to draw the rectangel. Updated self.update_shown_coordinates()
+        # The 'shown_' attributes needed to draw the rectangle. Updated self.update_shown_coordinates()
         self.shown_left:float = None
         self.shown_top:float = None
         self.shown_width:float = None
@@ -59,6 +59,9 @@ class RotatableBox(QWidget):
         self.shown_angle:float = None
 
         self.current_action = actions.none
+
+        self.last_clicked_zone:zone_areas = None
+
         # Members used for moving
         self.shown_drag_offset:QPoint = None # the difference between mouse and box's origin (left, top)
         # Members used for rotating
@@ -66,7 +69,12 @@ class RotatableBox(QWidget):
         self.final_angle:float = None # the final angle after rotating
         self.shown_center_x_original:float = None # the initial center at the start of rotating. x-cor
         self.shown_center_y_original:float = None # the initial center at the start of rotating. y-cor
-        self.original_transformation = None # delete...its just for testing
+        self.original_transformation = None # the original transformation before starting to rotate
+        # Members used for resizing
+        self.original_left = None # The original tx of the transformation
+        self.original_top = None # The original ty of the transformation
+        self.original_right = None # The original tx + width of the transformation
+        self.original_bottom = None # The original tx + height of the transformation
 
         self.initGUI()
 
@@ -132,6 +140,9 @@ class RotatableBox(QWidget):
             elif zone_clicked != zone_areas.outside:
                 # Resize the box
                 self.current_action = actions.resize
+                self.last_clicked_zone = zone_clicked
+                self.original_transformation = self.drawable_element.get_transformation()
+                self.get_original_shown_borders()
                 return
         self.target.mousePressEvent(event)
 
@@ -141,7 +152,7 @@ class RotatableBox(QWidget):
         elif self.current_action == actions.rotate:
             self.rotate_box(event.pos())
         elif self.current_action == actions.resize:
-            pass
+            self.resize_box(event.pos())
         else:
             self.update_cursor(self.get_zone(event.pos()))
             self.target.mouseMoveEvent(event)
@@ -237,11 +248,73 @@ class RotatableBox(QWidget):
         self.image_processor.apply_element_transformation(self.drawable_element)
         self.update()
 
-    def resize_box(self):
+    def resize_box(self, mouse_postion:QPoint) -> None:
         '''
         Handle the logic for resizing the box
         '''
-        pass
+        # Get the ZoomableLabel info
+        zoomable_label = self.zoomable_widget.zoomable_label
+        selection = zoomable_label.subimage_selection
+        offset = zoomable_label.offset
+        scale_factor = zoomable_label.scale_factor
+
+        # Calculate the rescaling done by the drawable box
+        x_scale, y_scale = 1, 1
+        if self.last_clicked_zone in [zone_areas.left, zone_areas.top_left, zone_areas.bottom_left]:
+            # Handle rescaling from the left border
+            new_left = mouse_postion.x()
+            if (original_width := self.shown_original_right - self.shown_original_left) > 2 \
+                and (new_width := self.shown_original_right - new_left) > 2: # avoid small width/height
+                x_scale = new_width / original_width
+            tx = (new_left - offset.x()) / scale_factor + selection.left
+        else:
+            tx = self.original_transformation[0, 2]
+        if self.last_clicked_zone in [zone_areas.top, zone_areas.top_left, zone_areas.top_right]:
+            # Handle rescaling from the top border
+            new_top = mouse_postion.y()
+            if (original_height := self.shown_original_bottom - self.shown_original_top) > 2 \
+                and (new_height := self.shown_original_bottom - new_top) > 2: # avoid small width/height
+                y_scale = new_height / original_height
+            ty = (new_top - offset.y()) / scale_factor + selection.top
+        else:
+            ty = self.original_transformation[1, 2]
+        if self.last_clicked_zone in [zone_areas.right, zone_areas.top_right, zone_areas.bottom_right]:
+            # Handle rescaling from the right border
+            new_right = mouse_postion.x()
+            if (original_width := self.shown_original_right - self.shown_original_left) > 2 \
+                and (new_width := new_right - self.shown_original_left) > 2: # avoid small width/height
+                x_scale = (new_right - self.shown_original_left) / original_width
+        if self.last_clicked_zone in [zone_areas.bottom, zone_areas.bottom_left, zone_areas.bottom_right]:
+            # Handle rescaling from the bottom border
+            new_bottom = mouse_postion.y()
+            if (original_height := self.shown_original_bottom - self.shown_original_top) > 2 \
+                and (new_height := new_bottom - self.shown_original_top) / 2: # avoid small width/height
+                y_scale = (new_bottom - self.shown_original_top) / original_height
+
+        # Compute the scale and rotation from the original affine matrix
+        U, S, Vt = np.linalg.svd(self.original_transformation[:, :2])  # Decompose into rotation and scaling
+        rotation_matrix = U @ Vt  # Rotation matrix (orthonormal part)
+        # Undo rotation by using the transpose of the rotation matrix (equivalent to its inverse)
+        undo_rotation = rotation_matrix.T
+
+        # Create the scaling matrix
+        scaling_matrix = np.array([
+            [x_scale, 0],
+            [0, y_scale]
+        ])
+
+        # Apply scaling, then reapply the original rotation
+        new_transform = rotation_matrix @ scaling_matrix @ undo_rotation @ self.original_transformation[:, :2]
+
+        # Combine with the translation part from the original affine matrix
+        new_affine = np.zeros((2, 3))
+        new_affine[:, :2] = new_transform
+        new_affine[:, 2] = [tx, ty]  # Keep the original translation offsets
+
+        self.drawable_element.transformation = new_affine
+        # Redraw the wdiget with the new scaling
+        self.image_processor.apply_element_transformation(self.drawable_element)
+        self.update()
 
     def update_shown_coordinates(self):
         '''
@@ -264,16 +337,16 @@ class RotatableBox(QWidget):
         scale_factor = zoomable_label.scale_factor
 
         # Calculate the new shown position, size and rotation for rendering the box
-        self.shown_width = scale_factor * shape[1]
-        self.shown_height = scale_factor * shape[0]
+        self.shown_width = scale_factor * scale_x * shape[1]
+        self.shown_height = scale_factor * scale_y * shape[0]
 
         # Get the correct left, top
-        self.shown_left = (tx / scale_x - selection.left) * scale_factor + offset.x()
-        self.shown_top = (ty / scale_y - selection.top) * scale_factor + offset.y()
+        self.shown_left = (tx - selection.left) * scale_factor + offset.x()
+        self.shown_top = (ty - selection.top) * scale_factor + offset.y()
 
         # Extract rotation angle
         cos_theta = a / scale_x
-        sin_theta = c / scale_y
+        sin_theta = c / scale_x
         self.shown_angle = math.degrees(math.atan2(sin_theta, cos_theta))
 
     def get_zone(self, mouse_position) -> zone_areas:
@@ -367,3 +440,17 @@ class RotatableBox(QWidget):
         self.shown_center_x_original = self.shown_left + cos_angle * self.shown_width / 2 - sin_angle * self.shown_height / 2
         self.shown_center_y_original = self.shown_top + sin_angle * self.shown_width / 2 + cos_angle * self.shown_height / 2
         return (self.shown_center_x_original, self.shown_center_y_original)
+    
+    def get_original_shown_borders(self) -> Tuple[float, float, float, float]:
+        '''
+        Get the original borders (left, top, right, bottom) of the box drawn in shown_coordinates
+        before applying the rotation around (left, top)
+        '''
+        
+        self.shown_original_left = self.shown_left
+        self.shown_original_top = self.shown_top
+        self.shown_original_right = self.shown_left + self.shown_width
+        self.shown_original_bottom = self.shown_top + self.shown_height
+
+        return self.shown_original_left, self.shown_original_top, \
+               self.shown_original_right, self.shown_original_bottom
