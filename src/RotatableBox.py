@@ -266,9 +266,9 @@ class RotatableBox(QWidget):
         undo_rotation = rotation_matrix.T
 
         # Undo the rotation of the mouse coordinates. Unrotate around (shown_left, shown_top)
-        mouse_pos_vec = np.array([mouse_position.x() - self.shown_left, mouse_position.y() - self.shown_top])
+        mouse_pos_vec = np.array([mouse_position.x() - self.shown_original_left, mouse_position.y() - self.shown_original_top])
         rotated_mouse_vec = undo_rotation @ mouse_pos_vec
-        mouse_position = QPoint(rotated_mouse_vec[0] + self.shown_left, rotated_mouse_vec[1] + self.shown_top)
+        mouse_position = QPoint(rotated_mouse_vec[0] + self.shown_original_left, rotated_mouse_vec[1] + self.shown_original_top)
 
         # Get the default tx, ty. Use if we do not rescale from the left or top respectively.
         tx, ty = self.original_transformation[:, 2]
@@ -314,7 +314,6 @@ class RotatableBox(QWidget):
             # Handle rescaling from the left border
             new_signed_width = fixed_border_x_coordinate - new_x
             x_scale = new_signed_width / original_signed_width
-            # tx = (new_x - offset.x()) / scale_factor + selection.left
         elif self.last_clicked_zone in [zone_areas.right, zone_areas.top_right, zone_areas.bottom_right]:
             # Handle rescaling from the right border
             new_signed_width = new_x - fixed_border_x_coordinate
@@ -325,7 +324,6 @@ class RotatableBox(QWidget):
             # Handle rescaling from the top border
             new_signed_height = fixed_border_y_coordinate - new_y
             y_scale = new_signed_height / original_height
-            ty = (new_y - offset.y()) / scale_factor + selection.top
         elif self.last_clicked_zone in [zone_areas.bottom, zone_areas.bottom_left, zone_areas.bottom_right]:
             # Handle rescaling from the bottom border
             new_height = new_y - fixed_border_y_coordinate
@@ -335,7 +333,12 @@ class RotatableBox(QWidget):
         if self.last_clicked_zone in [zone_areas.left, zone_areas.bottom_left]:
             delta_x = (new_x - self.shown_original_left) / scale_factor
             tx = tx + delta_x * math.cos(math.radians(self.shown_angle))
-            ty = ty - delta_x * math.sin(math.radians(self.shown_angle))
+            ty = ty + delta_x * math.sin(math.radians(self.shown_angle))
+        elif self.last_clicked_zone in [zone_areas.top, zone_areas.top_right]:
+            delta_y = (new_y - self.shown_original_top) / scale_factor
+            print(delta_y)
+            tx = tx - delta_y * math.sin(math.radians(self.shown_angle))
+            ty = ty + delta_y * math.cos(math.radians(self.shown_angle))
 
         # Create the scaling matrix
         scaling_matrix = np.array([
@@ -350,7 +353,6 @@ class RotatableBox(QWidget):
         new_affine = np.zeros((2, 3))
         new_affine[:, :2] = new_transform
         new_affine[:, 2] = [tx, ty] # Keep the original translation offsets
-        print(tx, ty)
 
         self.drawable_element.transformation = new_affine
         # Redraw the wdiget with the new scaling
@@ -492,7 +494,6 @@ class RotatableBox(QWidget):
                      (self.shown_bottom - self.shown_top) / 2]
         self.shown_center_x_original = self.shown_left + cos_angle * wh_vector[0] - sin_angle * wh_vector[1]
         self.shown_center_y_original = self.shown_top + sin_angle * wh_vector[0] + cos_angle * wh_vector[1]
-        print(self.shown_center_x_original, self.shown_center_y_original)
         return (self.shown_center_x_original, self.shown_center_y_original)
 
     def get_original_shown_borders(self) -> Tuple[float, float, float, float]:
