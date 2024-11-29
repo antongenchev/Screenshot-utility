@@ -510,7 +510,7 @@ def get_line_to_point_vector(l0, l1, p) -> Tuple[float, float]:
         p:Tuple[float,float] x,y coordinates
     '''
     l0l1 = (l1[0]-l0[0], l1[1]-l0[1]) # vector from l0 to l1
-    l0p = (p[0]-l0[0], p[1]-l0[0]) # vector from l0 to p
+    l0p = (p[0]-l0[0], p[1]-l0[1]) # vector from l0 to p
     proj_scale = (l0p[0]*l0l1[0] + l0p[1]*l0l1[1]) / (l0l1[0]**2 + l0l1[1]**2) 
     proj = (proj_scale * l0l1[0], proj_scale * l0l1[1]) # the projection of l0p on l0l1
     return (l0p[0]-proj[0], l0p[1]-proj[1])
