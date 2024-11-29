@@ -5,7 +5,7 @@ from PyQt5.QtGui import QPainter, QPen, QColor, QCursor
 import os
 import math
 import numpy as np
-from typing import Tuple
+from typing import Tuple, List
 from enum import IntEnum, auto
 from src.DrawableElement import DrawableElement
 from src.utils import Box
@@ -143,7 +143,6 @@ class RotatableBox(QWidget):
                 self.current_action = actions.resize
                 self.last_clicked_zone = zone_clicked
                 self.original_transformation = self.drawable_element.get_transformation()
-                self.get_original_shown_borders()
                 return
         self.target.mousePressEvent(event)
 
@@ -259,103 +258,42 @@ class RotatableBox(QWidget):
         offset = zoomable_label.offset
         scale_factor = zoomable_label.scale_factor
 
-        # Compute the scale and rotation from the original transformation
-        U, S, Vt = np.linalg.svd(self.original_transformation[:, :2])
-        rotation_matrix = U @ Vt # Rotation matrix (orthonormal part)
-        # Undo rotation by using the transpose of the rotation matrix (equivalent to its inverse)
-        undo_rotation = rotation_matrix.T
+        # Get the mouse position/point on the real image as an (x,y) tuple.
+        mouse_point = ((mouse_position.x() - offset.x()) / scale_factor + selection.left,
+                       (mouse_position.y() - offset.y()) / scale_factor + selection.top)
 
-        # Undo the rotation of the mouse coordinates. Unrotate around (shown_left, shown_top)
-        mouse_pos_vec = np.array([mouse_position.x() - self.shown_original_left, mouse_position.y() - self.shown_original_top])
-        rotated_mouse_vec = undo_rotation @ mouse_pos_vec
-        mouse_position = QPoint(rotated_mouse_vec[0] + self.shown_original_left, rotated_mouse_vec[1] + self.shown_original_top)
+        # Get the ortho-edge (3 points: the corners of the box except the bottom-right corner)
+        # Format is top-left corner(A), bottom-left corner(B), top-right corner(C)
+        h, w = self.drawable_element.image.shape[:2]
+        untransformed_ortho_edge = [(0, 0), (0, h), (w, 0)]
+        ortho_edge = map_points_by_transformation(untransformed_ortho_edge, self.original_transformation)
+        bottom_right = (ortho_edge[2][0] + ortho_edge[1][0] - ortho_edge[0][0],
+                        ortho_edge[2][1] + ortho_edge[1][1] - ortho_edge[0][1])
 
-        # Get the default tx, ty. Use if we do not rescale from the left or top respectively.
-        tx, ty = self.original_transformation[:, 2]
-        # The default rescaling
-        x_scale, y_scale = 1, 1
-
-        # Calculate the original width and height before rescaling
-        original_signed_width = abs(self.shown_original_right - self.shown_original_left)
-        original_height = self.shown_original_bottom - self.shown_original_top
-        if min(abs(original_signed_width), original_height) < 1:
-            raise Exception(f'Width and heights must be at least 1: {original_signed_width=} {original_height=}')
-
-        # Avoid small width
-        fixed_border_x_coordinate = None
+        # Move the left border
         if self.last_clicked_zone in [zone_areas.left, zone_areas.top_left, zone_areas.bottom_left]:
-            fixed_border_x_coordinate = self.shown_original_right
-        elif self.last_clicked_zone in [zone_areas.right, zone_areas.top_right, zone_areas.bottom_right]:
-            fixed_border_x_coordinate = self.shown_original_left
-        if fixed_border_x_coordinate is not None:
-            if -2 < mouse_position.x() - fixed_border_x_coordinate <= 0:
-                new_x = fixed_border_x_coordinate - 2
-            elif 0 < mouse_position.x() - fixed_border_x_coordinate < 2:
-                new_x = fixed_border_x_coordinate + 2
-            else:
-                new_x = mouse_position.x()
-
-        # Avoid small height
-        fixed_border_y_coordinate = None
+            v = get_line_to_point_vector(ortho_edge[0], ortho_edge[1], mouse_point)
+            ortho_edge[0] = (ortho_edge[0][0] + v[0], ortho_edge[0][1] + v[1]) # move the top-left corner
+            ortho_edge[1] = (ortho_edge[1][0] + v[0], ortho_edge[1][1] + v[1]) # move the bottom-left corner
+        # Move the top border
         if self.last_clicked_zone in [zone_areas.top, zone_areas.top_left, zone_areas.top_right]:
-            fixed_border_y_coordinate = self.shown_original_bottom
-        elif self.last_clicked_zone in [zone_areas.bottom, zone_areas.bottom_left, zone_areas.bottom_right]:
-            fixed_border_y_coordinate = self.shown_original_top
-        if fixed_border_y_coordinate is not None:
-            if -2 < mouse_position.y() - fixed_border_y_coordinate <= 0:
-                new_y = fixed_border_y_coordinate - 2
-            elif 0 < mouse_position.y() - fixed_border_y_coordinate < 2:
-                new_y = fixed_border_y_coordinate + 2
-            else:
-                new_y = mouse_position.y()
+            v = get_line_to_point_vector(ortho_edge[0], ortho_edge[2], mouse_point)
+            ortho_edge[0] = (ortho_edge[0][0] + v[0], ortho_edge[0][1] + v[1]) # move the top-left corner
+            ortho_edge[2] = (ortho_edge[2][0] + v[0], ortho_edge[2][1] + v[1]) # move the bottom-left corner
+        # Move the right border
+        if self.last_clicked_zone in [zone_areas.right, zone_areas.top_right, zone_areas.bottom_right]:
+            v = get_line_to_point_vector(ortho_edge[2], bottom_right, mouse_point)
+            ortho_edge[2] = (ortho_edge[2][0] + v[0], ortho_edge[2][1] + v[1])
+        # Move the bottom border
+        if self.last_clicked_zone in [zone_areas.bottom, zone_areas.bottom_left, zone_areas.bottom_right]:
+            v = get_line_to_point_vector(ortho_edge[1], bottom_right, mouse_point)
+            ortho_edge[1] = (ortho_edge[1][0] + v[0], ortho_edge[1][1] + v[1])
 
-        # Calculate the horizontal rescaling
-        if self.last_clicked_zone in [zone_areas.left, zone_areas.top_left, zone_areas.bottom_left]:
-            # Handle rescaling from the left border
-            new_signed_width = fixed_border_x_coordinate - new_x
-            x_scale = new_signed_width / original_signed_width
-        elif self.last_clicked_zone in [zone_areas.right, zone_areas.top_right, zone_areas.bottom_right]:
-            # Handle rescaling from the right border
-            new_signed_width = new_x - fixed_border_x_coordinate
-            x_scale = new_signed_width / original_signed_width
+        # Convert ortho_edge to a transformation. The three corners define a unique transformation
+        new_transformation = get_original_transformation_from_points(untransformed_ortho_edge, ortho_edge)
 
-        # Calculate the vertical rescaling
-        if self.last_clicked_zone in [zone_areas.top, zone_areas.top_left, zone_areas.top_right]:
-            # Handle rescaling from the top border
-            new_signed_height = fixed_border_y_coordinate - new_y
-            y_scale = new_signed_height / original_height
-        elif self.last_clicked_zone in [zone_areas.bottom, zone_areas.bottom_left, zone_areas.bottom_right]:
-            # Handle rescaling from the bottom border
-            new_height = new_y - fixed_border_y_coordinate
-            y_scale = new_height / original_height
-
-        # Calculate the offset (tx, ty)
-        if self.last_clicked_zone in [zone_areas.left, zone_areas.bottom_left]:
-            delta_x = (new_x - self.shown_original_left) / scale_factor
-            tx = tx + delta_x * math.cos(math.radians(self.shown_angle))
-            ty = ty + delta_x * math.sin(math.radians(self.shown_angle))
-        elif self.last_clicked_zone in [zone_areas.top, zone_areas.top_right]:
-            delta_y = (new_y - self.shown_original_top) / scale_factor
-            print(delta_y)
-            tx = tx - delta_y * math.sin(math.radians(self.shown_angle))
-            ty = ty + delta_y * math.cos(math.radians(self.shown_angle))
-
-        # Create the scaling matrix
-        scaling_matrix = np.array([
-            [x_scale, 0],
-            [0, y_scale]
-        ])
-
-        # Apply scaling, then reapply the original rotation
-        new_transform = rotation_matrix @ scaling_matrix @ undo_rotation @ self.original_transformation[:, :2]
-
-        # Combine with the translation part from the original affine matrix
-        new_affine = np.zeros((2, 3))
-        new_affine[:, :2] = new_transform
-        new_affine[:, 2] = [tx, ty] # Keep the original translation offsets
-
-        self.drawable_element.transformation = new_affine
-        # Redraw the wdiget with the new scaling
+        # Redraw the widget with the new transformation
+        self.drawable_element.transformation = new_transformation
         self.image_processor.apply_element_transformation(self.drawable_element)
         self.update()
 
@@ -496,15 +434,83 @@ class RotatableBox(QWidget):
         self.shown_center_y_original = self.shown_top + sin_angle * wh_vector[0] + cos_angle * wh_vector[1]
         return (self.shown_center_x_original, self.shown_center_y_original)
 
-    def get_original_shown_borders(self) -> Tuple[float, float, float, float]:
-        '''
-        Get the original borders (left, top, right, bottom) of the box drawn in shown_coordinates
-        before applying the rotation around (left, top)
-        '''
-        self.shown_original_left = self.shown_left
-        self.shown_original_top = self.shown_top
-        self.shown_original_right = self.shown_right
-        self.shown_original_bottom = self.shown_bottom
+def map_points_by_transformation(
+    original_corners: List[Tuple[float, float]],
+    transformation: np.ndarray
+) -> List[Tuple[float, float]]:
+    '''
+    Computes the transformed coordinates of the original corners using an affine transformation.
 
-        return self.shown_original_left, self.shown_original_top, \
-               self.shown_original_right, self.shown_original_bottom
+    Parameters:
+        original_corners (List[Tuple[float, float]]): A list of tuples representing 
+            the original coordinates of the corners (e.g., any number of points).
+        transformation (np.ndarray): A 2x3 matrix representing the affine transformation.
+    Returns:
+        List[Tuple[float, float]] A list of tuples. Each tuple represents a point (x, y) 
+        consisting of 2 floats. These are the transformed coordinates of the input points.
+    '''
+    # Convert the original corners to homogeneous coordinates
+    homogeneous_corners = np.array(
+        [[x, y, 1] for x, y in original_corners], dtype=np.float32
+    )
+
+    # Apply the affine transformation to the corners
+    transformed_corners = (transformation @ homogeneous_corners.T).T
+
+    # Extract and return the transformed coordinates as a list of tuples
+    return [(float(x), float(y)) for x, y in transformed_corners]
+
+def get_original_transformation_from_points(
+    original_corners: List[Tuple[float, float]],
+    transformed_corners: List[Tuple[float, float]]
+) -> np.ndarray:
+    '''
+    Computes the affine transformation matrix from original to transformed points.
+
+    Parameters:
+        original_corners (List[Tuple[float, float]]): A list of three tuples representing 
+            the original coordinates of the top-left, bottom-left, and top-right corners.
+        transformed_corners (List[Tuple[float, float]]): A list of three tuples representing 
+            the transformed coordinates of the top-left, bottom-left, and top-right corners.
+    Returns:
+        np.ndarray: A 2x3 affine transformation matrix that maps the original coordinates 
+        to the transformed coordinates.
+    '''
+    # Convert the input lists to numpy arrays
+    original = np.array(original_corners, dtype=np.float32)
+    transformed = np.array(transformed_corners, dtype=np.float32)
+
+    # Construct a 3x3 affine transformation matrix
+    A = []
+    B = []
+
+    for (x_orig, y_orig), (x_trans, y_trans) in zip(original, transformed):
+        A.append([x_orig, y_orig, 1, 0, 0, 0])
+        A.append([0, 0, 0, x_orig, y_orig, 1])
+        B.extend([x_trans, y_trans])
+
+    A = np.array(A, dtype=np.float32)
+    B = np.array(B, dtype=np.float32)
+
+    # Solve the linear equation Ax = B
+    # x contains the elements of the 2x3 affine transformation matrix
+    transform_params, _, _, _ = np.linalg.lstsq(A, B, rcond=None)
+
+    # Reshape the parameters to form a 2x3 matrix
+    return transform_params.reshape(2, 3)
+        
+def get_line_to_point_vector(l0, l1, p) -> Tuple[float, float]:
+    '''
+    Given a line going through l0 and l1, and a point p that can be outside the line. Find the shortest
+    vector, v, needed such that the line passing through l0+v and l1+v is also passing through p
+
+    Parameters:
+        l0:Tuple[float,float] x,y coordinates
+        l1:Tuple[float,float] x,y coordinates
+        p:Tuple[float,float] x,y coordinates
+    '''
+    l0l1 = (l1[0]-l0[0], l1[1]-l0[1]) # vector from l0 to l1
+    l0p = (p[0]-l0[0], p[1]-l0[0]) # vector from l0 to p
+    proj_scale = (l0p[0]*l0l1[0] + l0p[1]*l0l1[1]) / (l0l1[0]**2 + l0l1[1]**2) 
+    proj = (proj_scale * l0l1[0], proj_scale * l0l1[1]) # the projection of l0p on l0l1
+    return (l0p[0]-proj[0], l0p[1]-proj[1])
