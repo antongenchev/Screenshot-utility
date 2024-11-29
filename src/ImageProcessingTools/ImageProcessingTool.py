@@ -6,6 +6,7 @@ class ImageProcessingTool:
         self.image_processor = image_processor
         self.drawing_enabled = False
 
+        # Load the part of the config file responsible for the tool
         self.config = {}
         self.load_config()
 

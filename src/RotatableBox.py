@@ -1,7 +1,8 @@
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QFrame, QWidget
 from PyQt5.QtCore import Qt, QRect, QPoint
-from PyQt5.QtGui import QPainter, QPen, QColor, QCursor
+from PyQt5.QtGui import QPainter, QPen, QColor, QCursor, QPixmap, QTransform
+from PyQt5.QtSvg import QSvgRenderer
 import os
 import math
 import numpy as np
@@ -58,8 +59,8 @@ class RotatableBox(QWidget):
         self.shown_bottom:float = None
         self.shown_width:float = None
         self.shown_height:float = None
-        self.shown_reflected:bool = False # is there reflection in x. In y is in x with rotation by 180
         self.shown_angle:float = None
+        self.shown_reflected:bool = False
 
         self.current_action = actions.none
 
@@ -72,12 +73,8 @@ class RotatableBox(QWidget):
         self.final_angle:float = None # the final angle after rotating
         self.shown_center_x_original:float = None # the initial center at the start of rotating. x-cor
         self.shown_center_y_original:float = None # the initial center at the start of rotating. y-cor
+        # Members used for both rotating and resizing
         self.original_transformation = None # the original transformation before starting to rotate
-        # Members used for resizing
-        self.original_left = None # The original tx of the transformation
-        self.original_top = None # The original ty of the transformation
-        self.original_right = None # The original tx + width of the transformation
-        self.original_bottom = None # The original tx + height of the transformation
 
         self.initGUI()
 
@@ -400,16 +397,52 @@ class RotatableBox(QWidget):
         # Change the cursor shape depending on the zone
         if zone == zone_areas.circle:
             self.setCursor(QCursor(Qt.ClosedHandCursor))
-        elif zone == zone_areas.top_left or zone == zone_areas.bottom_right:
-            self.setCursor(QCursor(Qt.SizeFDiagCursor)) # Diagonal resize ↘↖
-        elif zone == zone_areas.top_right or zone == zone_areas.bottom_left:
-            self.setCursor(QCursor(Qt.SizeBDiagCursor)) # Diagonal resize ↙↗
-        elif zone == zone_areas.left or zone == zone_areas.right:
-            self.setCursor(QCursor(Qt.SizeHorCursor)) # Horizontal resize ↔
-        elif zone == zone_areas.top or zone == zone_areas.bottom:
-            self.setCursor(QCursor(Qt.SizeVerCursor)) # Vertical resize ↕
+        elif zone in [zone_areas.top_left, zone_areas.bottom_right, zone_areas.top_right,
+                      zone_areas.bottom_left, zone_areas.left, zone_areas.right,
+                      zone_areas.top, zone_areas.bottom]:
+            self.set_resizing_cursor(zone)
         else:
             self.setCursor(QCursor(Qt.ArrowCursor))
+
+    def set_resizing_cursor(self, zone:zone_areas):
+        '''
+        Set the resizing cursor at a given angle. angle = 0 is vertical, the cursor rotates 
+        '''
+        # Load the resize cursor if it is not already loaded. TODO: think of refactoring
+        if not hasattr(self, 'resize_cursors_pixmap'):
+            # Create a QPixmap to hold the rendered SVG image
+            self.pixmap = QPixmap(32, 32)  # Specify the size of the pixmap for the cursor
+            self.pixmap.fill(Qt.transparent)  # Fill it with transparency
+            # Use QSvgRenderer to render the SVG onto the QPixmap
+            renderer = QSvgRenderer('resources/tools/select/cursor_resize.svg')
+            painter = QPainter(self.pixmap)
+            renderer.render(painter)
+            painter.end()
+
+        # Calculate the angle by which the cursor should be roated
+        if zone == zone_areas.top_left or zone == zone_areas.bottom_right:
+            angle = 315 # Diagonal resize ↘↖
+        elif zone == zone_areas.top_right or zone == zone_areas.bottom_left:
+            angle = 45 # Diagonal resize ↙↗
+        elif zone == zone_areas.left or zone == zone_areas.right:
+            angle = 90 # Horizontal resize ↔
+        elif zone == zone_areas.top or zone == zone_areas.bottom:
+            angle = 0 # Vertical resize ↕
+
+        # Adjust the angle to match the rotation
+        if self.shown_reflected:
+            angle = -angle +self.shown_angle
+        else:
+            angle += self.shown_angle
+
+        # Transform the pixmap by the required angle
+        transform = QTransform()
+        transform.rotate(angle)
+        rotated_pixmap = self.pixmap.transformed(transform, mode=Qt.SmoothTransformation)
+
+        # Create the cursor and set it
+        rotated_cursor = QCursor(rotated_pixmap, hotX=rotated_pixmap.width() // 2, hotY=rotated_pixmap.height() // 2)
+        self.setCursor(QCursor(rotated_cursor))
 
     def get_angle_from_center(self, mouse_position:QPoint) -> float:
         '''
