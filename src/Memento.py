@@ -1,6 +1,6 @@
 import time
 from typing import Any, Optional, Dict
-from src.utils import Box
+from src.utils.Box import Box
 from src.config import config
 
 class Memento:

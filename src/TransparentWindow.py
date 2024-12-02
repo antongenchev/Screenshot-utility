@@ -7,7 +7,7 @@ from src.DraggableBox import DraggableBox
 from src.OverlayWidget import OverlayWidget
 from src.Memento import MementoTransparentWindow
 from src.Caretaker import caretaker
-from src.utils import Box
+from src.utils.Box import Box
 from src.config import *
 
 class TransparentWindow(QMainWindow):

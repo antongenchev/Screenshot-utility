@@ -5,34 +5,34 @@ import math
 class Vector:
     def __init__(self,
                  values:Union[List, Tuple]):
-        self.v = list(values[0])
+        self.v = list(values)
 
     def __repr__(self):
-        return f"Vector({self.values}"
+        return f"Vector({self.v}"
 
     def __setitem__(self, key, value):
-        self.values[key] = value
+        self.v[key] = value
 
     def __getitem__(self, key):
-        return self.values[key]
+        return self.v[key]
 
     def __len__(self):
-        return len(self.values)
+        return len(self.v)
 
     def __eq__(self, other):
         if isinstance(other, Vector):
-            return self.values == other.values
+            return self.v == other.v
         return False
     
     def append(self, value):
-        self.values.append(value)
+        self.v.append(value)
 
     def to_list(self):
-        return list(self.values)
+        return list(self.v)
 
     def magnitude(self):
         """Calculate the magnitude of the vector."""
-        return math.sqrt(sum(x ** 2 for x in self.values))
+        return math.sqrt(sum(x ** 2 for x in self.v))
 
     def __add__(self, other):
         """Add twwo vectors"""
@@ -40,7 +40,7 @@ class Vector:
             raise ValueError("Can only add another Vector.")
         if len(self) != len(other):
             raise ValueError("Vectors must be the same length for addition.")
-        return Vector([a + b for a, b in zip(self.values, other.values)])
+        return Vector([a + b for a, b in zip(self.v, other.v)])
     
     def __sub__(self, other):
         """Subtract another vector from this vector."""
@@ -48,7 +48,7 @@ class Vector:
             raise ValueError("Can only subtract another Vector.")
         if len(self) != len(other):
             raise ValueError("Vectors must be the same length for subtraction.")
-        return Vector([a - b for a, b in zip(self.values, other.values)])
+        return Vector([a - b for a, b in zip(self.v, other.v)])
 
     def __mul__(self, other):
         """Scale the vector by a constant using the * operator."""
@@ -59,11 +59,19 @@ class Vector:
         """Allow scalar * vector (commutative multiplication)."""
         return self.__mul__(other)
 
+    def __truediv__(self, other):
+        """Scale the vector by dividing each component by a constant using the / operator."""
+        if not isinstance(other, (int, float)):
+            raise ValueError("Can only divide a vector by a scalar (int or float).")
+        if other == 0:
+            raise ZeroDivisionError("Cannot divide by zero.")
+        return Vector([x / other for x in self.v])
+
     def scale(self, constant):
         """Scale the vector by a constant."""
         if not isinstance(constant, (int, float)):
             raise ValueError("The scaling factor must be a numeric value.")
-        return Vector([x * constant for x in self.values])
+        return Vector([x * constant for x in self.v])
 
     def dot(self, other):
         """Calculate the dot product of two vectors."""
@@ -71,7 +79,7 @@ class Vector:
             raise ValueError("Can only calculate dot product with another Vector.")
         if len(self) != len(other):
             raise ValueError("Vectors must be the same length for dot product.")
-        return sum(a * b for a, b in zip(self.values, other.values))
+        return sum(a * b for a, b in zip(self.v, other.v))
 
     def projection(self, other):
         """Calculate the projection of this vector onto another vector."""
@@ -81,7 +89,7 @@ class Vector:
         if magnitude_squared == 0:
             raise ValueError("Cannot project onto a zero vector.")
         scale = self.dot(other) / magnitude_squared
-        return Vector([scale * x for x in other.values])
+        return Vector([scale * x for x in other.v])
 
     def angle(self, other):
         """Calculate the angle (in radians) between this vector and another."""
@@ -100,8 +108,8 @@ class Vector:
             raise ValueError("Can only calculate cross product with another Vector.")
         if len(self) != 3 or len(other) != 3:
             raise ValueError("Cross product is only defined for 3D vectors.")
-        a, b, c = self.values
-        d, e, f = other.values
+        a, b, c = self.v
+        d, e, f = other.v
         return Vector([
             b * f - c * e,
             c * d - a * f,

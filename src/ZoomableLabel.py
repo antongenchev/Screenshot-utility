@@ -3,7 +3,7 @@ from PyQt5.QtGui import QPainter, QImage
 from PyQt5.QtCore import Qt, QPoint, pyqtSignal
 import numpy as np
 from typing import Tuple
-from src.utils import Box
+from src.utils.Box import Box
 from src.config import config
 
 class ZoomableLabel(QLabel):

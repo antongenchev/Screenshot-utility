@@ -9,7 +9,8 @@ import numpy as np
 from typing import Tuple, List
 from enum import IntEnum, auto
 from src.DrawableElement import DrawableElement
-from src.utils import Box
+from src.utils.Vector import Vector
+from src.utils.Box import Box
 from src.config import *
 
 class zone_areas(IntEnum):

@@ -10,7 +10,7 @@ from mss import mss
 import cv2
 import numpy as np
 import os
-from src.utils import Box
+from src.utils.Box import Box
 from src.config import *
 
 class ScreenshotApp(QWidget):

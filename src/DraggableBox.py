@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QCursor
 import os
 from enum import IntEnum, auto
-from src.utils import Box
+from src.utils.Box import Box
 from src.config import *
 
 class zone_areas(IntEnum):
