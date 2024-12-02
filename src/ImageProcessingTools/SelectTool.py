@@ -54,12 +54,13 @@ class SelectTool(ImageProcessingTool):
             return
 
         # Create a rotatable box in the overlay of the zoomable widget
-        self.image_processor.zoomable_widget.overlay.rotatable_box = RotatableBox(
+        rotatable_box = RotatableBox(
             parent=self.image_processor.zoomable_widget.overlay,
             zoomable_widget=self.image_processor.zoomable_widget,
             image_processor=self.image_processor,
             drawable_element=self.selected_element
         )
+        self.image_processor.zoomable_widget.overlay.rotatable_box = rotatable_box
 
     def on_mouse_move(self, x: int, y: int):
         '''

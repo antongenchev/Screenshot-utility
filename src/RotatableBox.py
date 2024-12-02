@@ -256,8 +256,8 @@ class RotatableBox(QWidget):
         scale_factor = zoomable_label.scale_factor
 
         # Get the mouse position/point on the real image as an (x,y) tuple.
-        mouse_point = ((mouse_position.x() - offset.x()) / scale_factor + selection.left,
-                       (mouse_position.y() - offset.y()) / scale_factor + selection.top)
+        mouse_point = [(mouse_position.x() - offset.x()) / scale_factor + selection.left,
+                       (mouse_position.y() - offset.y()) / scale_factor + selection.top]
 
         # Get the ortho-edge (3 points: the corners of the box except the bottom-right corner)
         # Format is top-left corner(A), bottom-left corner(B), top-right corner(C)
@@ -269,9 +269,22 @@ class RotatableBox(QWidget):
 
         # Move the left border
         if self.last_clicked_zone in [zone_areas.left, zone_areas.top_left, zone_areas.bottom_left]:
+            # Ensure the width is going to be more than 2 pixels
+            # Get the distance from the mouse to the right border
+            right_border_to_mouse = get_line_to_point_vector(ortho_edge[2], bottom_right, mouse_point)
+            distance = get_magnitude(right_border_to_mouse)
+            if 0.1 < abs(distance) < 2:
+                # Move the mouse further away from the right border
+                mouse_point[0] += 2*(right_border_to_mouse[0] / distance)
+                mouse_point[1] += 2*(right_border_to_mouse[1] / distance)
+            else:
+                # Move the mouse 2 pixels left of the right border
+                right_to_left = (ortho_edge[2][0] - ortho_edge[0][0], ortho_edge[2][1] - ortho_edge[0][1])
+                mouse_point[0] += 2*(right_to_left[0] / get_magnitude(right_to_left))
+                mouse_point[1] += 2*(right_to_left[1] / get_magnitude(right_to_left))
             v = get_line_to_point_vector(ortho_edge[0], ortho_edge[1], mouse_point)
             ortho_edge[0] = (ortho_edge[0][0] + v[0], ortho_edge[0][1] + v[1]) # move the top-left corner
-            ortho_edge[1] = (ortho_edge[1][0] + v[0], ortho_edge[1][1] + v[1]) # move the bottom-left corner
+            ortho_edge[1] = (ortho_edge[1][0] + v[0], ortho_edge[1][1] + v[1]) # move the bottom-left corner_
         # Move the top border
         if self.last_clicked_zone in [zone_areas.top, zone_areas.top_left, zone_areas.top_right]:
             v = get_line_to_point_vector(ortho_edge[0], ortho_edge[2], mouse_point)
@@ -538,12 +551,37 @@ def get_line_to_point_vector(l0, l1, p) -> Tuple[float, float]:
     vector, v, needed such that the line passing through l0+v and l1+v is also passing through p
 
     Parameters:
-        l0:Tuple[float,float] x,y coordinates
-        l1:Tuple[float,float] x,y coordinates
-        p:Tuple[float,float] x,y coordinates
+        l0:Tuple[float,float]- x,y coordinates
+        l1:Tuple[float,float]- x,y coordinates
+        p:Tuple[float,float] - x,y coordinates
+    Returns:
+        the shortest vector from the line to the point
     '''
     l0l1 = (l1[0]-l0[0], l1[1]-l0[1]) # vector from l0 to l1
     l0p = (p[0]-l0[0], p[1]-l0[1]) # vector from l0 to p
     proj_scale = (l0p[0]*l0l1[0] + l0p[1]*l0l1[1]) / (l0l1[0]**2 + l0l1[1]**2) 
     proj = (proj_scale * l0l1[0], proj_scale * l0l1[1]) # the projection of l0p on l0l1
     return (l0p[0]-proj[0], l0p[1]-proj[1])
+
+def get_distance(p0:Tuple[float, float], p1:Tuple[float, float]) -> float:
+    '''
+    Get the Eculidean distance from point p0 to p1.
+
+    Parameters:
+        p0:Tuple[float,float] - x,y coordinates
+        p1:Tuple[float,float] - x,y coordinates
+    Returns:
+        float: the distance from p0 to p1 
+    '''
+    return get_magnitude(p0[0] - p1[0], p0[1] - p1[1])
+
+def get_magnitude(v:Tuple[float, float]) -> float:
+    '''
+    Get the magnitude of a vector, using Euclidean distance
+
+    Parameters:
+        v:Tuple[float,float] - vector with x,y coordinates
+    Returns:
+        float: the magnitude of the vector
+    '''
+    return math.sqrt(v[0]**2 + v[1]**2)
