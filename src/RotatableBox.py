@@ -9,7 +9,7 @@ import numpy as np
 from typing import Tuple, List
 from enum import IntEnum, auto
 from src.DrawableElement import DrawableElement
-from src.utils.Vector import Vector
+from src.utils.Vector import Vector, Vect2d
 from src.utils.Box import Box
 from src.config import *
 
@@ -199,25 +199,16 @@ class RotatableBox(QWidget):
         # Calculate the change in angle
         delta_angle = self.get_angle_from_center(mouse_position) - self.initial_angle
 
-        # Extract transformation components
-        transformation = self.drawable_element.transformation
-        a, b = transformation[0, 0], transformation[0, 1]
-        c, d = transformation[1, 0], transformation[1, 1]
-        tx, ty = transformation[0, 2], transformation[1, 2]
-        image_width = self.drawable_element.image.shape[1]
-        image_height = self.drawable_element.image.shape[0]
-        # Calculate the scale factors
-        scale_x = math.sqrt(a**2 + b**2)
-        scale_y = math.sqrt(c**2 + d**2)
+        # Extract image dimensions
+        vec_image_shape = Vect2d(self.drawable_element.image.shape[:2][::-1])
+
         # Compute the true center of the rectangle after scaling
-        center = self.original_transformation @ np.array([image_width / 2, image_height / 2, 1])
-        center_x = center[0]
-        center_y = center[1]
+        center = Vector(self.original_transformation @ np.array((vec_image_shape / 2).to_list() + [1]))
 
         # Translate to origin
         translation_to_origin = np.array([
-            [1, 0, -center_x],
-            [0, 1, -center_y],
+            [1, 0, -center[0]],
+            [0, 1, -center[1]],
             [0, 0, 1]
         ])
         # Apply rotation
@@ -231,8 +222,8 @@ class RotatableBox(QWidget):
         ])
         # Translate back
         translation_back = np.array([
-            [1, 0, center_x],
-            [0, 1, center_y],
+            [1, 0, center[0]],
+            [0, 1, center[1]],
             [0, 0, 1]
         ])
 
@@ -318,8 +309,8 @@ class RotatableBox(QWidget):
         transformation = self.drawable_element.transformation
         a, b, tx = transformation[0, :]
         c, d, ty = transformation[1, :]
-        abs_scale_x = math.sqrt(a**2 + c**2) # correct up to +/- sign
-        scale_y = math.sqrt(b**2 + d**2)
+        abs_scale_x = Vect2d([a, c]).magnitude() # correct up to +/- sign
+        scale_y = Vect2d([b, d]).magnitude()
         shape = self.drawable_element.image.shape
 
         # Get the ZoomableLabel info
@@ -471,14 +462,13 @@ class RotatableBox(QWidget):
         '''
         Get the shown center coodrinates
         '''
-        angle_radians = math.radians(self.shown_angle)
-        cos_angle = math.cos(angle_radians)
-        sin_angle = math.sin(angle_radians)
         # Use (left, top) and add a rotated version of the vector (width, height)/2
-        wh_vector = [(self.shown_right - self.shown_left) / 2,
-                     (self.shown_bottom - self.shown_top) / 2]
-        self.shown_center_x_original = self.shown_left + cos_angle * wh_vector[0] - sin_angle * wh_vector[1]
-        self.shown_center_y_original = self.shown_top + sin_angle * wh_vector[0] + cos_angle * wh_vector[1]
+        vec_left_top = Vect2d([self.shown_left, self.shown_top])
+        vec_wh = (Vect2d([self.shown_right, self.shown_bottom]) - vec_left_top) / 2
+        vec_shown_center = vec_left_top + vec_wh.rotate(self.shown_angle)
+
+        self.shown_center_x_original = vec_shown_center[0]
+        self.shown_center_y_original = vec_shown_center[1]
         return (self.shown_center_x_original, self.shown_center_y_original)
 
 def map_points_by_transformation(
