@@ -90,6 +90,9 @@ class ImageProcessor(QWidget):
         settings_ui = self.current_tool.create_settings_ui()
         self.image_processing_tool_setting.set_tool_settings_ui(settings_ui)
 
+        # Reset the mouse to be released (bug fix)
+        self.zoomable_label.mouse_pressed = False
+
     ##################
     # Handle signals #
     ##################
