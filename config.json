@@ -44,6 +44,10 @@
         {
             "name": "SelectTool",
             "order": 3
+        },
+        {
+            "name": "TextTool",
+            "order": 4
         }
     ]
 }

@@ -5,6 +5,7 @@ import numpy as np
 from typing import Tuple
 from src.utils.Box import Box
 from src.config import config
+from src.utils.Vector import Vect2d
 
 class ZoomableLabel(QLabel):
 
@@ -245,3 +246,19 @@ class ZoomableLabel(QLabel):
             return False
         else:
             return True
+        
+    def convert_image_coordinates_to_shown(self, x:int, y:int) -> Vect2d:
+        '''
+        Get the shown coordinates with respect to the ZoomableWidget and its Overlay
+        from the coordinates of a point in the image displayed by ZoomableLabel.
+
+        Parameters:
+            x - the x-coordinate in the image
+            y - the y-coordinate in the image
+
+        Returns:
+            Vect2d: the x,y-coordinates relative to the Overlay.
+        '''
+        shown_x = (x - self.subimage_selection.left) * self.scale_factor + self.offset.x()
+        shown_y = (y - self.subimage_selection.top) * self.scale_factor + self.offset.y()
+        return Vect2d(shown_x, shown_y)
