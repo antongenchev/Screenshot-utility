@@ -108,14 +108,16 @@ class RotatableBox(QWidget):
         painter.translate(-self.shown_left, -self.shown_top)
 
         # Draw the rectangle
-        rect = QRect(QPoint(self.shown_left, self.shown_top), QPoint(self.shown_right, self.shown_bottom))
+        rect = QRect(QPoint(int(self.shown_left), int(self.shown_top)), QPoint(int(self.shown_right), int(self.shown_bottom)))
         painter.drawRect(rect)
 
         # Draw a circle above the rectangle
         circle_radius = 5
         center_x = (self.shown_left + self.shown_right) / 2
         center_y = self.shown_top - self.circle_radius - self.circle_top_offset
-        painter.drawEllipse(center_x - circle_radius, center_y - circle_radius, circle_radius * 2, circle_radius * 2)
+        painter.drawEllipse(int(center_x - circle_radius),
+                            int(center_y - circle_radius),
+                            circle_radius * 2, circle_radius * 2)
 
         painter.end()
 
@@ -127,7 +129,7 @@ class RotatableBox(QWidget):
             if zone_clicked == zone_areas.center:
                 # Drag the box
                 self.current_action = actions.move
-                self.shown_drag_offset = mouse_position - QPoint(self.shown_left, self.shown_top)
+                self.shown_drag_offset = mouse_position - QPoint(int(self.shown_left), int(self.shown_top))
                 return
             elif zone_clicked == zone_areas.circle:
                 # Rotate the box
@@ -307,8 +309,8 @@ class RotatableBox(QWidget):
         '''
         # Get the DrawableElement info
         transformation = self.drawable_element.transformation
-        a, b, tx = transformation[0, :]
-        c, d, ty = transformation[1, :]
+        a, b, tx = map(float, transformation[0, :])
+        c, d, ty = map(float, transformation[1, :])
         abs_scale_x = Vect2d([a, c]).magnitude() # correct up to +/- sign
         scale_y = Vect2d([b, d]).magnitude()
         shape = self.drawable_element.image.shape

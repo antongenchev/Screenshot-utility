@@ -166,7 +166,7 @@ class ZoomableLabel(QLabel):
 
         # Draw the scaled and translated image
         painter = QPainter(self)
-        scaled_image = q_image.scaled(width * self.scale_factor, height * self.scale_factor, Qt.IgnoreAspectRatio, Qt.FastTransformation)
+        scaled_image = q_image.scaled(int(width * self.scale_factor), int(height * self.scale_factor), Qt.IgnoreAspectRatio, Qt.FastTransformation)
         painter.drawImage(self.offset, scaled_image)
 
     def update_subimage(self):
@@ -197,8 +197,8 @@ class ZoomableLabel(QLabel):
         self.subimage_selection = Box(left, top, right - left, bottom - top)
 
         # Update the offset
-        self.offset.setX(self.offset.x() + self.scale_factor * (self.subimage_selection.left - old_subimage_selection.left))
-        self.offset.setY(self.offset.y() + self.scale_factor * (self.subimage_selection.top - old_subimage_selection.top))
+        self.offset.setX(int(self.offset.x() + self.scale_factor * (self.subimage_selection.left - old_subimage_selection.left)))
+        self.offset.setY(int(self.offset.y() + self.scale_factor * (self.subimage_selection.top - old_subimage_selection.top)))
 
     def update_transformed_image(self, image=None):
         '''

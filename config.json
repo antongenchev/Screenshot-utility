@@ -14,8 +14,8 @@
         "resize_border": 5
     },
     "paths": {
-        "screenshot_background": "/home/default/Desktop/screenshot/Screenshot-utility/photos/screenshot/screenshot.png",
-        "screenshot_selection": "/home/default/Desktop/screenshot/Screenshot-utility/photos/screenshot/screenshot_selection.png"
+        "screenshot_background": "/home/anton-genchev/projects/Screenshot-utility/photos/screenshot/screenshot.png",
+        "screenshot_selection": "/home/anton-genchev/projects/Screenshot-utility/photos/screenshot/screenshot_selection.png"
     },
     "mementos": {
         "max_num_mementos": 100,
