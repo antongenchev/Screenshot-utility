@@ -5,6 +5,7 @@ class ImageProcessingTool:
     def __init__(self, image_processor):
         self.image_processor = image_processor
         self.drawing_enabled = False
+        self.resources_path = f'resources/tools/{self.__class__.__name__}'
 
         # Load the part of the config file responsible for the tool
         self.config = {}

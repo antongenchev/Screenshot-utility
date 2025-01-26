@@ -47,7 +47,17 @@
         },
         {
             "name": "TextTool",
-            "order": 4
+            "order": 4,
+            "options": {
+                "fonts": ["Arial", "Times New Roman", "Courier New", "Verdana", "Helvetica"],
+                "font_name": "Arial",
+                "min_font_size": 8,
+                "max_font_size": 30,
+                "font_size": 12,
+                "text_color": "#000000",
+                "text_opacity": 1.0,
+                "placeholder": "Enter text here..."
+            }
         }
     ]
 }
