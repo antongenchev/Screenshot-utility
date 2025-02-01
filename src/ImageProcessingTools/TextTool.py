@@ -268,7 +268,7 @@ class TextTool(ImageProcessingTool):
             transformation = np.array([[1, 0, self.real_position[0]], [0, 1, self.real_position[1]]], dtype=np.float32) # The affine transformation with offset
             self.create_drawable_element(instructions,
                                          cv_image,
-                                         touch_mask=np.ones_like(cv_image),
+                                         touch_mask=255 * np.ones(cv_image.shape[:2]),
                                          transformation=transformation)
 
     def create_new_text_widget(self, x:int, y:int) -> None:
