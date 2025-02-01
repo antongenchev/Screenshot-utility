@@ -5,6 +5,8 @@ from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QColor, QTextCursor, QTextBlockFormat, QTextCharFormat, QFont, QIcon, QPixmap, QPainter
 from PyQt5.QtSvg import QSvgRenderer
 from functools import partial
+from src.utils.image_rendering import *
+from typing import Optional, Tuple
 
 class TextTool(ImageProcessingTool):
     def __init__(self, image_processor):
@@ -18,6 +20,10 @@ class TextTool(ImageProcessingTool):
         self.text_opacity = self.config['options']['text_opacity']
         self.placeholder_text = self.config['options']['placeholder']
         self.alignment = 'Left'
+
+        # State/instruction related members
+        self.real_position: Tuple[int, int] = None # the position relative to the image
+        self.resize_factor: float = None # the
 
         # Hardcoded values
         self.icon_button_width = 30
@@ -188,13 +194,17 @@ class TextTool(ImageProcessingTool):
 
     def on_mouse_down(self, x: int, y: int):
         '''
-        Handle mouse down events. Create a widget for writing text
+        Handle mouse down events. Create a widget for writing text. Mouse events
+        from existing text_widgets will not reach this function.
 
         Parameters:
             x - the x-coordinate in the image
             y - the y-coordinate in the image
         '''
+        # Save and delete previous text_widget if it exists
+        self.save_text_widget()
         self.remove_previous_text_widget()
+        # Create new text_widget.
         self.create_new_text_widget(x, y)
 
     def on_mouse_up(self, x: int, y: int):
@@ -210,11 +220,56 @@ class TextTool(ImageProcessingTool):
         the text in a drawable element and draw the drawable element.
         '''
         # Check if a previous text widget exists, and remove it if necessary
-        if self.text_widget_exists():
+        if old_text_widget := self.get_text_widget():
             old_text_widget = self.image_processor.zoomable_widget.overlay.text_field
             old_text_widget.setParent(None)
             old_text_widget.deleteLater()
             self.image_processor.zoomable_widget.overlay.text_field = None
+
+    def save_text_widget(self) -> None:
+        '''
+        Saves the current text_widget if it contains text.
+        '''
+        if (text_widget := self.get_text_widget()) and text_widget.toPlainText():
+            # Deselect any selected text
+            cursor = text_widget.textCursor()
+            cursor.clearSelection()
+            text_widget.setTextCursor(cursor)
+            text_widget.repaint()
+
+            # Render widget onto a pixmap
+            pixmap = QPixmap(text_widget.size())
+            pixmap.fill(Qt.transparent)
+            text_widget.render(pixmap)
+
+            # Convert QPixmap to cv2 image
+            cv_image = qpixmap_to_cv2(pixmap)
+
+            text_data = text_widget.toHtml()
+            position = text_widget.pos()
+            size = text_widget.size()
+
+            # Get opacity
+            opacity_effect = text_widget.graphicsEffect()
+            opacity = opacity_effect.opacity() if opacity_effect else 1.0
+            print(700, text_data, position, size, opacity)
+
+            instructions = {
+                'html': text_data,
+                'x': position.x(),
+                'y': position.y(),
+                'width': size.width(),
+                'height': size.height(),
+                'opacity': opacity
+            }
+
+            # Create the new drawable element
+            instructions = {}
+            transformation = np.array([[1, 0, self.real_position[0]], [0, 1, self.real_position[1]]], dtype=np.float32) # The affine transformation with offset
+            self.create_drawable_element(instructions,
+                                         cv_image,
+                                         touch_mask=np.ones_like(cv_image),
+                                         transformation=transformation)
 
     def create_new_text_widget(self, x:int, y:int) -> None:
         '''
@@ -225,6 +280,7 @@ class TextTool(ImageProcessingTool):
             x - the x-coordinate in the image
             y - the y-coordinate in the image
         '''
+        self.real_position = (x, y) # position relative to the image
         # Create a text field in the overlay of the zoomable widget
         text_widget = QTextEdit(self.image_processor.zoomable_widget.overlay)
         text_widget.setPlaceholderText(self.placeholder_text)
@@ -248,7 +304,7 @@ class TextTool(ImageProcessingTool):
                 color: {hex_to_rgba(self.text_color, self.text_opacity)};
             }}
         """)
-            
+
         # Set the opacity
         opacity_effect = QGraphicsOpacityEffect()
         opacity_effect.setOpacity(self.text_opacity)
@@ -327,8 +383,7 @@ class TextTool(ImageProcessingTool):
         Set the font family for the text widget.
         '''
         self.font_name = font_name
-        if self.text_widget_exists():
-            current_widget = self.image_processor.zoomable_widget.overlay.text_field
+        if current_widget := self.get_text_widget():
             current_font = current_widget.font()
             current_font.setFamily(font_name)
             current_widget.setFont(current_font)
@@ -339,8 +394,7 @@ class TextTool(ImageProcessingTool):
         Set the font size for the textwidget.
         '''
         self.font_size = size
-        if self.text_widget_exists():
-            current_widget = self.image_processor.zoomable_widget.overlay.text_field
+        if current_widget := self.get_text_widget():
             current_font = current_widget.font()
             current_font.setPointSize(size)
             current_widget.setFont(current_font)
@@ -360,8 +414,7 @@ class TextTool(ImageProcessingTool):
         # Toggle bold state
         self.is_bold = not self.is_bold
         self.highlight_button('bold_button', self.is_bold)
-        if self.text_widget_exists():
-            current_widget = self.image_processor.zoomable_widget.overlay.text_field
+        if current_widget := self.get_text_widget():
             cursor = current_widget.textCursor()
             format = QTextCharFormat()
             format.setFontWeight(QFont.Bold if not cursor.charFormat().font().weight() == QFont.Bold else QFont.Normal)
@@ -372,8 +425,7 @@ class TextTool(ImageProcessingTool):
         # Toggle italic state
         self.is_italic = not self.is_italic
         self.highlight_button('italic_button', self.is_italic)
-        if self.text_widget_exists():
-            current_widget = self.image_processor.zoomable_widget.overlay.text_field
+        if current_widget := self.get_text_widget():
             cursor = current_widget.textCursor()
             format = QTextCharFormat()
             format.setFontItalic(not cursor.charFormat().font().italic())
@@ -384,8 +436,7 @@ class TextTool(ImageProcessingTool):
         # Toggle underline state
         self.is_underline = not self.is_underline
         self.highlight_button('underline_button', self.is_underline)
-        if self.text_widget_exists():
-            current_widget = self.image_processor.zoomable_widget.overlay.text_field
+        if current_widget := self.get_text_widget():
             cursor = current_widget.textCursor()
             format = QTextCharFormat()
             format.setFontUnderline(not cursor.charFormat().font().underline())
@@ -396,8 +447,7 @@ class TextTool(ImageProcessingTool):
         # Toggel strikethroguh state
         self.is_strikethrough = not self.is_strikethrough
         self.highlight_button('strikethrough_button', self.is_strikethrough)
-        if self.text_widget_exists():
-            current_widget = self.image_processor.zoomable_widget.overlay.text_field
+        if current_widget := self.get_text_widget():
             cursor = current_widget.textCursor()
             format = QTextCharFormat()
             format.setFontStrikeOut(self.is_strikethrough)
@@ -411,8 +461,7 @@ class TextTool(ImageProcessingTool):
         color = QColorDialog.getColor()
         if color.isValid():
             self.text_color = color.name()
-            if self.text_widget_exists():
-                current_widget = self.image_processor.zoomable_widget.overlay.text_field
+            if current_widget := self.get_text_widget():
                 current_widget.setStyleSheet(f"""
                     QTextEdit {{
                         background: transparent;
@@ -429,8 +478,7 @@ class TextTool(ImageProcessingTool):
         self.text_opacity = value / 100
         self.opacity_label.setText(f'({value}%)')
 
-        if self.text_widget_exists():
-            current_widget = self.image_processor.zoomable_widget.overlay.text_field
+        if current_widget := self.get_text_widget():
             current_widget.setStyleSheet(f"""
                 QTextEdit {{
                     background: transparent;
@@ -444,8 +492,7 @@ class TextTool(ImageProcessingTool):
         Set the alignment for the text widget.
         '''
         self.alignment = alignment
-        if self.text_widget_exists():
-            current_widget = self.image_processor.zoomable_widget.overlay.text_field
+        if current_widget := self.get_text_widget():
             document = current_widget.document()
             cursor = QTextCursor(document)
 
@@ -472,7 +519,18 @@ class TextTool(ImageProcessingTool):
         '''
         return hasattr(self.image_processor.zoomable_widget.overlay, 'text_field') \
             and self.image_processor.zoomable_widget.overlay.text_field
-  
+
+    def get_text_widget(self) -> Optional[QTextEdit]:
+        '''
+        Get the text_widget from the overlay if such a widget exists
+
+        Returns:
+            Optional[QTextEdit]: The QTextEdit object if it exists otherwise a None
+        '''
+        if hasattr(self.image_processor.zoomable_widget.overlay, 'text_field') \
+        and (text_widget := self.image_processor.zoomable_widget.overlay.text_field):
+            return text_widget
+
     def create_svg_icon(self, icon_path):
         '''
         Helper function to create QIcon from SVG file path
