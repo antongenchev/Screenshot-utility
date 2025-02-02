@@ -399,6 +399,7 @@ class TextTool(ImageProcessingTool):
             current_font.setFamily(font_name)
             current_widget.setFont(current_font)
             self.resize_text_widget(current_widget)
+            current_widget.setFocus()
 
     def set_font_size(self, size):
         '''
@@ -410,6 +411,7 @@ class TextTool(ImageProcessingTool):
             current_font.setPointSize(int(size * self.resize_factor))
             current_widget.setFont(current_font)
             self.resize_text_widget(current_widget)
+            current_widget.setFocus()
 
     def update_font_size_label(self, value: int, label: QLabel):
         '''
@@ -484,6 +486,7 @@ class TextTool(ImageProcessingTool):
                         color: {hex_to_rgba(self.text_color, self.text_opacity)};
                     }}
                 """)
+                current_widget.setFocus()
             # Update the label
             self.color_hex_label.setText(f"{color.name()}")
             # Update the rectangle showing the current color
@@ -501,6 +504,7 @@ class TextTool(ImageProcessingTool):
                     color: {hex_to_rgba(self.text_color, self.text_opacity)};
                 }}
             """)
+            current_widget.setFocus()
 
     def set_alignment(self, alignment:str) -> None:
         '''
@@ -527,6 +531,7 @@ class TextTool(ImageProcessingTool):
             cursor.clearSelection()
             # Update the text widget with the new alignment
             current_widget.setTextCursor(cursor)
+            current_widget.setFocus()
 
     def get_resize_factor(self) -> float:
         '''
