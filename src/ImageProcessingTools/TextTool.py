@@ -431,6 +431,7 @@ class TextTool(ImageProcessingTool):
             format.setFontWeight(QFont.Bold if not cursor.charFormat().font().weight() == QFont.Bold else QFont.Normal)
             cursor.mergeCharFormat(format)
             current_widget.setTextCursor(cursor)
+            current_widget.setFocus()
 
     def toggle_italic(self):
         # Toggle italic state
@@ -442,6 +443,7 @@ class TextTool(ImageProcessingTool):
             format.setFontItalic(not cursor.charFormat().font().italic())
             cursor.mergeCharFormat(format)
             current_widget.setTextCursor(cursor)
+            current_widget.setFocus()
 
     def toggle_underline(self):
         # Toggle underline state
@@ -453,6 +455,7 @@ class TextTool(ImageProcessingTool):
             format.setFontUnderline(not cursor.charFormat().font().underline())
             cursor.mergeCharFormat(format)
             current_widget.setTextCursor(cursor)
+            current_widget.setFocus()
 
     def toggle_strikethrough(self):
         # Toggel strikethroguh state
@@ -464,6 +467,7 @@ class TextTool(ImageProcessingTool):
             format.setFontStrikeOut(self.is_strikethrough)
             cursor.mergeCharFormat(format)
             current_widget.setTextCursor(cursor)
+            current_widget.setFocus()
 
     def open_color_picker(self):
         '''
