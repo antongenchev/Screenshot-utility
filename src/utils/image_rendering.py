@@ -12,7 +12,8 @@ def qimage_to_cv2(qimage: QImage) -> np.ndarray:
     ptr = qimage.bits()
     ptr.setsize(qimage.byteCount())
     arr = np.array(ptr).reshape((height, width, 4))
-    return arr
+    cv2_image = cv2.cvtColor(arr, cv2.COLOR_BGRA2RGBA)
+    return cv2_image
 
 def qpixmap_to_cv2(pixmap: QPixmap) -> np.ndarray:
     """Convert QPixmap to OpenCV (cv2) image."""

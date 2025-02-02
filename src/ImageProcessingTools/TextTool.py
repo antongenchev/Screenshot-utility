@@ -17,7 +17,7 @@ class TextTool(ImageProcessingTool):
         self.font_name = self.config['options']['font_name']
         self.font_size_min = self.config['options']['min_font_size']
         self.font_size_max = self.config['options']['max_font_size']
-        self.font_size = self.config['options']['font_size']
+        self.real_font_size = self.config['options']['font_size']
         self.text_color = self.config['options']['text_color']
         self.text_opacity = self.config['options']['text_opacity']
         self.placeholder_text = self.config['options']['placeholder']
@@ -25,7 +25,7 @@ class TextTool(ImageProcessingTool):
 
         # State/instruction related members
         self.real_position: Tuple[int, int] = None # the position relative to the image
-        self.resize_factor: float = None # the
+        self.resize_factor: float = None # the factor that adjusts the real font size based on the scale factor
 
         # Hardcoded values
         self.icon_button_width = 30
@@ -65,13 +65,13 @@ class TextTool(ImageProcessingTool):
         font_size_label_icon.setPixmap(font_size_icon)
         font_size_label_icon.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         font_size_label = QLabel()
-        font_size_label.setText(f"({self.font_size})")
+        font_size_label.setText(f"({self.real_font_size})")
         font_size_label.setFixedWidth(40)
         # Create the font size slider
         font_size_slider = QSlider(Qt.Horizontal)
         font_size_slider.setMinimum(self.font_size_min)
         font_size_slider.setMaximum(self.font_size_max)
-        font_size_slider.setValue(self.font_size)
+        font_size_slider.setValue(self.real_font_size)
         font_size_slider.valueChanged.connect(self.set_font_size)
         font_size_slider.valueChanged.connect(lambda value: self.update_font_size_label(value, font_size_label))
         # Add the labels with icon and text to the layout
@@ -233,6 +233,12 @@ class TextTool(ImageProcessingTool):
         Saves the current text_widget if it contains text.
         '''
         if (text_widget := self.get_text_widget()) and text_widget.toPlainText():
+            # Get original font size
+            font = text_widget.font()
+            font.setPointSize(int(self.real_font_size)) # Set font size
+            text_widget.setFont(font)
+            self.resize_text_widget(text_widget)
+
             # Deselect any selected text
             cursor = text_widget.textCursor()
             cursor.clearSelection()
@@ -254,7 +260,6 @@ class TextTool(ImageProcessingTool):
             # Get opacity
             opacity_effect = text_widget.graphicsEffect()
             opacity = opacity_effect.opacity() if opacity_effect else 1.0
-            print(700, text_data, position, size, opacity)
 
             instructions = {
                 'html': text_data,
@@ -282,7 +287,10 @@ class TextTool(ImageProcessingTool):
             x - the x-coordinate in the image
             y - the y-coordinate in the image
         '''
+        # Offset so vertically we start typing from the middle of the line
+        y = y - int(self.real_font_size * (2/3)) # 4 pixels is 1pt
         self.real_position = (x, y) # position relative to the image
+
         # Create a text field in the overlay of the zoomable widget
         text_widget = QTextEdit(self.image_processor.zoomable_widget.overlay)
         text_widget.setPlaceholderText(self.placeholder_text)
@@ -293,8 +301,9 @@ class TextTool(ImageProcessingTool):
         text_widget.move(int(shown_x), int(shown_y))
 
         # Set the initial styling
+        self.get_resize_factor()
         font = text_widget.font()
-        font.setPointSize(self.font_size) # Set font size
+        font.setPointSize(int(self.real_font_size * self.resize_factor)) # Set font size
         if self.font_name:
             font.setFamily(self.font_name) # Set font name if available
         text_widget.setFont(font)
@@ -375,7 +384,7 @@ class TextTool(ImageProcessingTool):
         additional_padding = 10
         line_spacing = text_widget.fontMetrics().lineSpacing()
         total_width = int(text_width + margins.left() + margins.right()) + additional_padding
-        total_height = int(text_height + margins.top() + margins.bottom()) + line_spacing
+        total_height = int(text_height + margins.top() + margins.bottom()) + additional_padding + line_spacing
 
         # Ensure no scrollbars by setting the exact dimensions of the content
         text_widget.setFixedSize(total_width, total_height)
@@ -395,10 +404,10 @@ class TextTool(ImageProcessingTool):
         '''
         Set the font size for the textwidget.
         '''
-        self.font_size = size
+        self.real_font_size = size
         if current_widget := self.get_text_widget():
             current_font = current_widget.font()
-            current_font.setPointSize(size)
+            current_font.setPointSize(int(size * self.resize_factor))
             current_widget.setFont(current_font)
             self.resize_text_widget(current_widget)
 
@@ -514,6 +523,16 @@ class TextTool(ImageProcessingTool):
             cursor.clearSelection()
             # Update the text widget with the new alignment
             current_widget.setTextCursor(cursor)
+
+    def get_resize_factor(self) -> float:
+        '''
+        Calculate the resize factor needed to adjust the font size based on the zoom lavel of the zoomable label.
+
+        Returns:
+            float: The resize_factor such that self.resize_factor * self.real_font_size = shown_font_size
+        '''
+        self.resize_factor = self.image_processor.zoomable_label.scale_factor
+        return self.resize_factor
 
     def text_widget_exists(self) -> bool:
         '''
