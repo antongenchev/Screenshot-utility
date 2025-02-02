@@ -6,6 +6,8 @@ from PyQt5.QtGui import QColor, QTextCursor, QTextBlockFormat, QTextCharFormat, 
 from PyQt5.QtSvg import QSvgRenderer
 from functools import partial
 from src.utils.image_rendering import *
+from src.components.FontComboBox import FontComboBox
+from src.components.IconsComboBox import IconsComboBox
 from typing import Optional, Tuple
 
 class TextTool(ImageProcessingTool):
@@ -557,67 +559,6 @@ class TextTool(ImageProcessingTool):
                 button.setStyleSheet("")
 
 
-
-class FontComboBox(QComboBox):
-    def __init__(self, font_options, parent=None):
-        super().__init__(parent)
-        self.font_options = font_options
-
-        # Hardcoded style parameters
-        self.font_size = 16
-        self.dropdown_height = 24
-        self.dropdown_width = 200
-
-        self.setFixedWidth(self.dropdown_width)
-
-        self.populate_font_dropdown()
-
-        # Connect selection change to update the current font in the combo box
-        self.currentIndexChanged.connect(self.update_current_font)
-        # Set the default font to the first font in the list (or a preset default)
-        self.set_current_font(self.font_options[0])
-
-    def populate_font_dropdown(self):
-        """
-        Populate the font dropdown with the fonts and their styles.
-        Each item will display with its respective font style.
-        """
-        for font_name in self.font_options:
-            font = QFont(font_name)
-            font.setPointSize(self.font_size)
-            item = font_name
-            self.addItem(item)
-
-            # Set the font for the item in the dropdown list
-            font_item = self.model().itemFromIndex(self.model().index(self.count()-1, 0))
-            font_item.setFont(font)
-
-    def update_current_font(self):
-        """
-        Update the font of the selected item in the combo box.
-        This makes sure the selected item shows the current font.
-        """
-        self.setFixedHeight(self.dropdown_height)
-
-        selected_font_name = self.currentText()
-        font = QFont(selected_font_name)
-        font.setPointSize(self.font_size)
-        self.setFont(font)
-
-        # Update the display of the selected font name
-        current_index = self.currentIndex()
-        font_item = self.model().itemFromIndex(self.model().index(current_index, 0))
-        font_item.setFont(font)
-
-    def set_current_font(self, font_name):
-        """
-        Set the current font in the combo box.
-        """
-        index = self.findText(font_name)
-        if index != -1:
-            self.setCurrentIndex(index)
-            self.update_current_font()
-
 def hex_to_rgba(hex_color: str, alpha: float) -> str:
     """
     Convert a hexadecimal color to an RGBA string.
@@ -635,37 +576,3 @@ def hex_to_rgba(hex_color: str, alpha: float) -> str:
     b = int(hex_color[4:6], 16)
     a = int(alpha * 255)  # Convert alpha (0.0-1.0) to 0-255
     return f"rgba({r}, {g}, {b}, {a})"
-
-
-
-class IconsComboBox(QComboBox):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-    def addItems(self, choice_names, icon_paths=None):
-        """
-        Adds icon options to the combo box. Takes alignment names and optionally icon paths.
-        
-        Parameters:
-            choice_names (list): List of alignment names like ["Left", "Center", "Right"]
-            icon_paths (list, optional): List of icon paths corresponding to each alignment option.
-        """
-        if icon_paths is None:
-            icon_paths = [""] * len(choice_names)  # Default to empty if no icons provided
-
-        for alignment_name, icon_path in zip(choice_names, icon_paths):
-            self.add_item_with_icon(alignment_name, icon_path)
-    
-    def add_item_with_icon(self, choice_name, icon_path):
-        """
-        Adds an item to the combo box with an associated icon.
-        
-        Parameters:
-            choice_name (str): The alignment name (e.g., "Left", "Center", "Right")
-            icon_path (str): The file path to the icon image (e.g., "left-align-icon.png")
-        """
-        if icon_path:
-            icon = QIcon(icon_path)
-            self.addItem(icon, choice_name)
-        else:
-            self.addItem(choice_name)  # Add just the text if no icon provided
