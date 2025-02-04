@@ -4,7 +4,7 @@ from PyQt5.QtGui import QPixmap, QImage
 from src.TransparentWindow import TransparentWindow
 from src.ZoomableLabel import ZoomableLabel
 from src.ZoomableWidget import ZoomableWidget
-from src.ImagePorcessor import ImageProcessor
+from src.ImageProcessor import ImageProcessor
 from src.ImageProcessingToolSetting import ImageProcessingToolSetting
 from mss import mss
 import cv2
