@@ -194,6 +194,15 @@ class TextTool(ImageProcessingTool):
         settings_widget.setLayout(layout)
         return settings_widget
 
+    def disable(self) -> None:
+        '''
+        Overide of the disable function from the ImageProcessingTool to save the last Text Widget.
+        '''
+        # Save and delete previous text_widget if it exists
+        self.save_text_widget()
+        self.remove_previous_text_widget()
+        super().disable()
+
     def on_mouse_down(self, x: int, y: int):
         '''
         Handle mouse down events. Create a widget for writing text. Mouse events

@@ -40,6 +40,9 @@ class ImageProcessingTool:
         self.image_processor.zoomable_label.drawing_enabled = True
 
     def disable(self):
+        '''
+        Disable the tool stoppiung the drawing.
+        '''
         self.drawing_enabled = False
         self.image_processor.drawing_enabled = False
         self.image_processor.zoomable_label.drawing_enabled = False

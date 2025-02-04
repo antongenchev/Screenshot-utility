@@ -85,6 +85,10 @@ class ImageProcessor(QWidget):
             }
 
     def set_tool(self, tool: ImageProcessingTool):
+        # Disable the previous tool
+        if self.current_tool is not None:
+            self.current_tool.disable()
+
         self.current_tool = tool
 
         settings_ui = self.current_tool.create_settings_ui()
