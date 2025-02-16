@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton
 from PyQt5.QtCore import pyqtSignal, QTimer
 from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import Qt
 import cv2
 import numpy as np
 from enum import IntEnum, auto
@@ -44,7 +45,9 @@ class ImageProcessor(QWidget):
         self.initUI()
 
     def initUI(self):
-        layout = QVBoxLayout()
+        layout = QHBoxLayout()
+        layout.setSpacing(6)
+        layout.setAlignment(Qt.AlignLeft) 
 
         # Load tools from the config.json file
         self.load_tools_from_config()

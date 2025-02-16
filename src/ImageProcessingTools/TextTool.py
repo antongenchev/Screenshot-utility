@@ -40,7 +40,10 @@ class TextTool(ImageProcessingTool):
 
     def create_ui(self):
         """Create the button for the move tool."""
-        self.button = QPushButton('Text')
+        self.button = QPushButton()
+        self.button.setIcon(create_svg_icon(f'{self.resources_path}/tool_button.svg'))
+        self.button.setIconSize(QSize(36, 36))
+        self.button.setFixedSize(QSize(36, 36))
         self.button.clicked.connect(partial(self.set_tool))
         return self.button
 
@@ -89,7 +92,7 @@ class TextTool(ImageProcessingTool):
 
         # Bold button
         self.bold_button = QPushButton()
-        self.bold_button.setIcon(self.create_svg_icon(f'{self.resources_path}/icon_bold.svg'))
+        self.bold_button.setIcon(create_svg_icon(f'{self.resources_path}/icon_bold.svg'))
         self.bold_button.setIconSize(QSize(24, 24))
         self.bold_button.setFixedSize(QSize(self.icon_button_width, self.icon_button_height))
         self.bold_button.clicked.connect(self.toggle_bold)
@@ -97,7 +100,7 @@ class TextTool(ImageProcessingTool):
 
         # Italic button
         self.italic_button = QPushButton()
-        self.italic_button.setIcon(self.create_svg_icon(f'{self.resources_path}/icon_italic.svg'))
+        self.italic_button.setIcon(create_svg_icon(f'{self.resources_path}/icon_italic.svg'))
         self.italic_button.setIconSize(QSize(24, 24))
         self.italic_button.setFixedSize(QSize(self.icon_button_width, self.icon_button_height))
         self.italic_button.clicked.connect(self.toggle_italic)
@@ -105,7 +108,7 @@ class TextTool(ImageProcessingTool):
 
         # Underline button
         self.underline_button = QPushButton()
-        self.underline_button.setIcon(self.create_svg_icon(f'{self.resources_path}/icon_underline.svg'))
+        self.underline_button.setIcon(create_svg_icon(f'{self.resources_path}/icon_underline.svg'))
         self.underline_button.setIconSize(QSize(24, 24))
         self.underline_button.setFixedSize(QSize(self.icon_button_width, self.icon_button_height))
         self.underline_button.clicked.connect(self.toggle_underline)
@@ -113,7 +116,7 @@ class TextTool(ImageProcessingTool):
 
         # Strikethrough button
         self.strikethrough_button = QPushButton()
-        self.strikethrough_button.setIcon(self.create_svg_icon(f'{self.resources_path}/icon_strikethrough.svg'))
+        self.strikethrough_button.setIcon(create_svg_icon(f'{self.resources_path}/icon_strikethrough.svg'))
         self.strikethrough_button.setIconSize(QSize(24, 24))
         self.strikethrough_button.setFixedSize(QSize(self.icon_button_width, self.icon_button_height))
         self.strikethrough_button.clicked.connect(self.toggle_strikethrough)
@@ -136,7 +139,7 @@ class TextTool(ImageProcessingTool):
         color_choice_layout = QHBoxLayout()
         color_choice_layout.setAlignment(Qt.AlignLeft)
         text_color_button = QPushButton()
-        text_color_button.setIcon(self.create_svg_icon(f'{self.resources_path}/icon_color_choice.svg'))
+        text_color_button.setIcon(create_svg_icon(f'{self.resources_path}/icon_color_choice.svg'))
         text_color_button.setIconSize(QSize(24, 24))
         text_color_button.setFixedSize(QSize(40, 40))
         text_color_button.clicked.connect(self.open_color_picker)
@@ -196,10 +199,16 @@ class TextTool(ImageProcessingTool):
         settings_widget.setLayout(layout)
         return settings_widget
 
+    def enable(self) -> None:
+        self.button.setStyleSheet("background-color: lightgray; border-radius: 5px;")
+        super().enable()
+
     def disable(self) -> None:
         '''
         Overide of the disable function from the ImageProcessingTool to save the last Text Widget.
         '''
+        # Remove highlight from button
+        self.button.setStyleSheet("")
         # Save and delete previous text_widget if it exists
         self.save_text_widget()
         self.remove_previous_text_widget()
@@ -581,20 +590,6 @@ class TextTool(ImageProcessingTool):
         if hasattr(self.image_processor.zoomable_widget.overlay, 'text_field') \
         and (text_widget := self.image_processor.zoomable_widget.overlay.text_field):
             return text_widget
-
-    def create_svg_icon(self, icon_path):
-        '''
-        Helper function to create QIcon from SVG file path
-        '''
-        icon = QIcon()
-        renderer = QSvgRenderer(icon_path)
-        pixmap = QPixmap(24, 24)
-        pixmap.fill(Qt.transparent)
-        painter = QPainter(pixmap)
-        renderer.render(painter)
-        painter.end()
-        icon.addPixmap(pixmap)
-        return icon
 
     def highlight_button(self, button_name, active):
         '''

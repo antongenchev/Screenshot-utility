@@ -1,6 +1,6 @@
 from src.ImageProcessingTools.ImageProcessingTool import ImageProcessingTool
 from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QSlider, QLabel, QWidget, QColorDialog
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtCore import Qt, QPoint, QSize
 from PyQt5.QtGui import QCursor, QPixmap, QPainter
 from PyQt5.QtSvg import QSvgRenderer
 import cv2
@@ -9,6 +9,7 @@ from functools import partial
 import copy
 from typing import List, Tuple
 from src.DrawableElement import DrawableElement
+from src.utils.image_rendering import create_svg_icon
 
 class PencilTool(ImageProcessingTool):
     def __init__(self, image_processor):
@@ -24,7 +25,10 @@ class PencilTool(ImageProcessingTool):
 
     def create_ui(self):
         """Create the button for the pencil tool."""
-        self.button = QPushButton('Draw')
+        self.button = QPushButton()
+        self.button.setIcon(create_svg_icon(f'{self.resources_path}/tool_button.svg'))
+        self.button.setIconSize(QSize(36, 36))
+        self.button.setFixedSize(QSize(36, 36))
         self.button.clicked.connect(partial(self.set_tool))
         return self.button
 
@@ -32,6 +36,7 @@ class PencilTool(ImageProcessingTool):
         '''
         Overriding the default `ImageProcessingTool.enable()` method to customise the cursor
         '''
+        self.button.setStyleSheet("background-color: lightgray; border-radius: 5px;")
         self.set_cursor_to_pencil()
         return super().enable()
 
@@ -40,6 +45,7 @@ class PencilTool(ImageProcessingTool):
         Overriding the default `ImageProcessingTool.disable()` method to return the cursor to 
         the default
         '''
+        self.button.setStyleSheet("")
         self.image_processor.zoomable_widget.setCursor(QCursor(Qt.ArrowCursor))
         return super().disable()
 

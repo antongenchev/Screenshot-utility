@@ -1,11 +1,13 @@
 from src.ImageProcessingTools.ImageProcessingTool import ImageProcessingTool
 from PyQt5.QtWidgets import QPushButton, QWidget
+from PyQt5.QtCore import QSize
 from functools import partial
 import cv2
 import numpy as np
 from enum import IntEnum, auto
 from src.DrawableElement import DrawableElement
 from src.RotatableBox import RotatableBox
+from src.utils.image_rendering import create_svg_icon
 
 class SelectTool(ImageProcessingTool):
 
@@ -22,7 +24,10 @@ class SelectTool(ImageProcessingTool):
 
     def create_ui(self):
         """Create the button for the move tool."""
-        self.button = QPushButton('Select')
+        self.button = QPushButton()
+        self.button.setIcon(create_svg_icon(f'{self.resources_path}/tool_button.svg'))
+        self.button.setIconSize(QSize(36, 36))
+        self.button.setFixedSize(QSize(36, 36))
         self.button.clicked.connect(partial(self.set_tool))
         return self.button
 
@@ -32,10 +37,15 @@ class SelectTool(ImageProcessingTool):
     def set_tool(self):
         super().set_tool()
 
+    def enable(self):
+        self.button.setStyleSheet("background-color: lightgray; border-radius: 5px;")
+        return super().enable()
+
     def disable(self) -> None:
         '''
         Overide of the disable function from the ImageProcessingTool to remove the RotatableBoxes.
         '''
+        self.button.setStyleSheet("")
         # Clear the rotatable boxes / selections when switching to another tool.
         self.delete_rotatable_boxes()
         super().disable()
