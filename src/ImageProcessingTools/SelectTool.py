@@ -32,6 +32,14 @@ class SelectTool(ImageProcessingTool):
     def set_tool(self):
         super().set_tool()
 
+    def disable(self) -> None:
+        '''
+        Overide of the disable function from the ImageProcessingTool to remove the RotatableBoxes.
+        '''
+        # Clear the rotatable boxes / selections when switching to another tool.
+        self.delete_rotatable_boxes()
+        super().disable()
+
     def on_mouse_down(self, x: int, y: int):
         '''
         Handle mouse down events. Try to select a drawable element from the active layer
@@ -41,12 +49,7 @@ class SelectTool(ImageProcessingTool):
             y - the y-coordinate in the image
         '''
         # Check if there's a previously created rotatable_box and delete it if it exists
-        if hasattr(self.image_processor.zoomable_widget.overlay, 'rotatable_box') \
-        and self.image_processor.zoomable_widget.overlay.rotatable_box is not None:
-                rotatable_box = self.image_processor.zoomable_widget.overlay.rotatable_box
-                rotatable_box.setParent(None)
-                rotatable_box.deleteLater()
-                self.image_processor.zoomable_widget.overlay.rotatable_box = None
+        self.delete_rotatable_boxes()
 
         # Get the drawable element beneath the mouse down event if such an element exists
         self.selected_element = self.image_processor.get_touch_element(x, y, 0)
@@ -79,3 +82,15 @@ class SelectTool(ImageProcessingTool):
             x - the x-coordinate in the image
             y - the y-coordinate in the image
         '''
+
+    def delete_rotatable_boxes(self):
+        '''
+        Use to delete the rotatable box if such exists.
+        '''
+        # Check if there's a previously created rotatable_box and delete it if it exists
+        if hasattr(self.image_processor.zoomable_widget.overlay, 'rotatable_box') \
+        and self.image_processor.zoomable_widget.overlay.rotatable_box is not None:
+                rotatable_box = self.image_processor.zoomable_widget.overlay.rotatable_box
+                rotatable_box.setParent(None)
+                rotatable_box.deleteLater()
+                self.image_processor.zoomable_widget.overlay.rotatable_box = None
