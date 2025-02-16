@@ -366,6 +366,7 @@ class TextTool(ImageProcessingTool):
             border: none;
             color: {hex_to_rgba(instructions['text_color'], instructions['text_opacity'])};
         }}""")
+        self.resize_text_widget(temp_widget)
 
         # Render the widget to a cv2 image
         pixmap = QPixmap(temp_widget.size())
@@ -385,6 +386,7 @@ class TextTool(ImageProcessingTool):
         '''
         # Get the document's layout and compute the full content size
         document = text_widget.document()
+        document.adjustSize()
         document_layout = document.documentLayout()
 
         # Determine text content size or use placeholder text to calculate size if empty
@@ -403,7 +405,7 @@ class TextTool(ImageProcessingTool):
         additional_padding = 10
         line_spacing = text_widget.fontMetrics().lineSpacing()
         total_width = int(text_width + margins.left() + margins.right()) + additional_padding
-        total_height = int(text_height + margins.top() + margins.bottom()) + additional_padding + line_spacing
+        total_height = int(text_height + margins.top() + margins.bottom()) + additional_padding + line_spacing//2
 
         # Ensure no scrollbars by setting the exact dimensions of the content
         text_widget.setFixedSize(total_width, total_height)
