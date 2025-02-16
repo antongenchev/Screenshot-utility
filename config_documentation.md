@@ -26,3 +26,22 @@
 ## ZoomableLabel
 - **min_pixels_per_side**: (int) Minimum number of pixels per side from the original cv2 image.
 - **minimum_scale**: (float) Minimum scale allowed for zooming.
+
+## Tools
+Each tool has
+- **name**: (str) The name of the tool e.g. "PencilTool".
+- **order**: (int) The order in which the tools should be showed in the GUI.
+- **options**: (optional[dict]) The tool specific options.
+### PencilTool
+- **pencil_colo**: (list) The default RGB color of the pencil e.g. [0, 255, 0] for green.
+- **pencil_thickness**: (int) The default thickness of the pencil in pixels
+- **pencil_opacity**: (float) The default opacity of the pencil between 0 and 1.
+### TextTool
+- **fonts**: (list) List of available font families.
+- **font_name**: (str) The default font family from the fonts.
+- **min_font_size**: (int) Minimum size of the text in pt.
+- **max_font_size**: (int) Miximum size of the text in pt.
+- **font_size**: (int) Default font size between min_font_size and max_font_size.
+- **text_color**: (str) The default text color expressed in a hexidecimal string e.g. "#000000".
+- **text_opacity**: (float) The default opacity in range between 0 and 1.
+- **placeholder**: (str) The place holder text.
