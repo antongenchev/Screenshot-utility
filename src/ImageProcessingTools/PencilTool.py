@@ -1,6 +1,8 @@
 from src.ImageProcessingTools.ImageProcessingTool import ImageProcessingTool
 from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QSlider, QLabel, QWidget, QColorDialog
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtGui import QCursor, QPixmap, QPainter
+from PyQt5.QtSvg import QSvgRenderer
 import cv2
 import numpy as np
 from functools import partial
@@ -25,6 +27,21 @@ class PencilTool(ImageProcessingTool):
         self.button = QPushButton('Draw')
         self.button.clicked.connect(partial(self.set_tool))
         return self.button
+
+    def enable(self):
+        '''
+        Overriding the default `ImageProcessingTool.enable()` method to customise the cursor
+        '''
+        self.set_cursor_to_pencil()
+        return super().enable()
+
+    def disable(self):
+        '''
+        Overriding the default `ImageProcessingTool.disable()` method to return the cursor to 
+        the default
+        '''
+        self.image_processor.zoomable_widget.setCursor(QCursor(Qt.ArrowCursor))
+        return super().disable()
 
     def on_mouse_down(self, x: int, y: int):
         '''
@@ -243,3 +260,23 @@ class PencilTool(ImageProcessingTool):
         if color.isValid():  # Check if a valid color is selected
             # Update the pencil color to the selected color in RGB format
             self.pencil_color = (color.red(), color.green(), color.blue())
+
+    def set_cursor_to_pencil(self):
+        '''
+        Set the cursor inside the zoomable widget to a pencil.
+        '''
+        # Create a QPixmap to hold the rendered SVG image
+        pixmap = QPixmap(32, 32)  # Specify the size of the pixmap for the cursor
+        pixmap.fill(Qt.transparent)  # Fill it with transparency
+        # Use QSvgRenderer to render the SVG onto the QPixmap
+        renderer = QSvgRenderer('resources/tools/PencilTool/cursor_pencil.svg')
+        painter = QPainter(pixmap)
+        renderer.render(painter)
+        painter.end()
+
+        #Set the cursor hotspot to the lower-left corner
+        hotspot = QPoint(0, pixmap.height() - 1)
+
+        # Create the cursor and set it
+        cursor = QCursor(pixmap, hotspot.x(), hotspot.y())
+        self.image_processor.zoomable_widget.setCursor(cursor)

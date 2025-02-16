@@ -421,7 +421,7 @@ class RotatableBox(QWidget):
             self.pixmap = QPixmap(32, 32)  # Specify the size of the pixmap for the cursor
             self.pixmap.fill(Qt.transparent)  # Fill it with transparency
             # Use QSvgRenderer to render the SVG onto the QPixmap
-            renderer = QSvgRenderer('resources/tools/select/cursor_resize.svg')
+            renderer = QSvgRenderer('resources/tools/SelectTool/cursor_resize.svg')
             painter = QPainter(self.pixmap)
             renderer.render(painter)
             painter.end()
@@ -438,7 +438,7 @@ class RotatableBox(QWidget):
 
         # Adjust the angle to match the rotation
         if self.shown_reflected:
-            angle = -angle +self.shown_angle
+            angle = self.shown_angle - angle
         else:
             angle += self.shown_angle
 
