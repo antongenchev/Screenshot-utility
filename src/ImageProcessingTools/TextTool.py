@@ -1,3 +1,4 @@
+import re
 from src.ImageProcessingTools.ImageProcessingTool import ImageProcessingTool
 from PyQt5.QtWidgets import QPushButton, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QComboBox, \
     QSlider, QLabel, QColorDialog, QFrame, QGraphicsOpacityEffect
@@ -9,6 +10,7 @@ from src.utils.image_rendering import *
 from src.components.FontComboBox import FontComboBox
 from src.components.IconsComboBox import IconsComboBox
 from typing import Optional, Tuple
+from src.DrawableElement import DrawableElement
 
 class TextTool(ImageProcessingTool):
     def __init__(self, image_processor):
@@ -242,49 +244,27 @@ class TextTool(ImageProcessingTool):
         Saves the current text_widget if it contains text.
         '''
         if (text_widget := self.get_text_widget()) and text_widget.toPlainText():
+            # Correct the gont size in the html
+            html_data = text_widget.toHtml()
+            html_data = re.sub(r"font-size:\s*\d+pt", f"font-size:{self.real_font_size}pt", html_data)
+
             # Get original font size
-            font = text_widget.font()
-            font.setPointSize(int(self.real_font_size)) # Set font size
-            text_widget.setFont(font)
-            self.resize_text_widget(text_widget)
-
-            # Deselect any selected text
-            cursor = text_widget.textCursor()
-            cursor.clearSelection()
-            text_widget.setTextCursor(cursor)
-            text_widget.repaint()
-
-            # Render widget onto a pixmap
-            pixmap = QPixmap(text_widget.size())
-            pixmap.fill(Qt.transparent)
-            text_widget.render(pixmap)
-
-            # Convert QPixmap to cv2 image
-            cv_image = qpixmap_to_cv2(pixmap)
-
-            text_data = text_widget.toHtml()
-            position = text_widget.pos()
-            size = text_widget.size()
-
-            # Get opacity
-            opacity_effect = text_widget.graphicsEffect()
-            opacity = opacity_effect.opacity() if opacity_effect else 1.0
-
             instructions = {
-                'html': text_data,
-                'x': position.x(),
-                'y': position.y(),
-                'width': size.width(),
-                'height': size.height(),
-                'opacity': opacity
+                'html': html_data,
+                'text_color': self.text_color,
+                'text_opacity': self.text_opacity,
+                'font_size': self.real_font_size,
+                'width': text_widget.size().width(),
+                'height': text_widget.size().height(),
             }
 
+            # The affine transformation with offset
+            transformation = np.array([[1, 0, self.real_position[0]], [0, 1, self.real_position[1]]], dtype=np.float32)
+
             # Create the new drawable element
-            instructions = {}
-            transformation = np.array([[1, 0, self.real_position[0]], [0, 1, self.real_position[1]]], dtype=np.float32) # The affine transformation with offset
             self.create_drawable_element(instructions,
-                                         cv_image,
-                                         touch_mask=255 * np.ones(cv_image.shape[:2]),
+                                         None,
+                                         None,
                                          transformation=transformation)
 
     def create_new_text_widget(self, x:int, y:int) -> None:
@@ -365,6 +345,36 @@ class TextTool(ImageProcessingTool):
             format.setFontStrikeOut(self.is_strikethrough)
             cursor.mergeCharFormat(format)
             text_widget.setTextCursor(cursor)
+
+    def draw_drawable_element(self, drawable_element:DrawableElement):
+        '''
+        Draw the drawable from the instructions.
+        Update drawable element.image using drawable_element.instructions.
+        '''
+        # Clear the image before drawing
+        drawable_element.clear_image()
+
+        # Create a temporary text widget
+        temp_widget = QTextEdit()
+        instructions = drawable_element.instructions
+        # Html
+        temp_widget.setHtml(instructions['html'])
+        # Style
+        temp_widget.setStyleSheet(f"""
+            QTextEdit {{
+            background: transparent;
+            border: none;
+            color: {hex_to_rgba(instructions['text_color'], instructions['text_opacity'])};
+        }}""")
+
+        # Render the widget to a cv2 image
+        pixmap = QPixmap(temp_widget.size())
+        pixmap.fill(Qt.transparent)
+        temp_widget.render(pixmap)
+        cv_image = qpixmap_to_cv2(pixmap)
+
+        drawable_element.image = cv_image
+        drawable_element.touch_mask = np.ones(cv_image.shape[:2]) * 255
 
     def resize_text_widget(self, text_widget):
         '''
